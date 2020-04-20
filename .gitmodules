@@ -1,0 +1,3 @@
+[submodule "src/test/resources/json5-tests"]
+	path = src/test/resources/json5-tests
+	url = git@github.com:json5/json5-tests.git
