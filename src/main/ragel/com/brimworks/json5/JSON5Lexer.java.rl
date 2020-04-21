@@ -20,11 +20,9 @@ class JSON5Lexer extends Ragel {
         tsLine = line;
         tsOffset = offset + p;
     }
-    public JSON5Location getLocation(String sourceName, List<JSON5Key> path, JSON5Location.Read readSource) {
-        return new JSON5Location(offset + p, line, sourceName, path, readSource);
-    }
 
     %% machine json5;
+    %% alphtype int;
     %% getkey (data.get(p) & 0xff);
     %% write data;
     @Override
@@ -34,6 +32,9 @@ class JSON5Lexer extends Ragel {
     @Override
     protected void ragelExec() {
         %% write exec;
+        if ( p == eof ) {
+            visitor.endOfStream(line, offset + p);
+        }
     }
 }
 
@@ -61,7 +62,7 @@ LineTerminatorSequence =
       CR | # FIXME: lookahead not LF
       LS |
       PS |
-      CR LF ) @{ line++; };
+      CR LF ) %{ line++; };
 HexDigit = [0-9a-fA-F];
 DecimalDigit = [0-9];
 NonZeroDigit = [1-9];
@@ -96,10 +97,16 @@ UnicodeLetter =
     [a-zA-Z];
 
 SingleEscapeCharacter =
-    "'" |
-    '"' |
-    "\\" |
-    [bfnrtv];
+    ( "'" |
+      '"' |
+      "\\" )
+        %{ appendStringBufferCodePt(p); } |
+    'b' %{ appendStringBufferCodePt(0x08); } |
+    'f' %{ appendStringBufferCodePt(0x0C); } |
+    'n' %{ appendStringBufferCodePt(0x0A); } |
+    'r' %{ appendStringBufferCodePt(0x0D); } |
+    't' %{ appendStringBufferCodePt(0x09); } |
+    'v' %{ appendStringBufferCodePt(0x0B); };
 
 EscapeCharacter =
     SingleEscapeCharacter |
@@ -107,27 +114,36 @@ EscapeCharacter =
     "x" |
     "u";
 
+# FIXME: This doesn't seem to work as expected:
 NonEscapeCharacter =
-    any - ( EscapeCharacter | LineTerminatorSequence );
+    any -- ( EscapeCharacter | LineTerminatorSequence );
 
 CharacterEscapeSequence =
-    SingleEscapeCharacter
-    NonEscapeCharacter;
+    SingleEscapeCharacter;
+    # |
+    #NonEscapeCharacter
+    #    %{ appendStringBufferCodePt(p); };
 
 UnicodeEscapeSequence =
-    "u" HexDigit HexDigit HexDigit HexDigit;
+    "u" ( HexDigit HexDigit HexDigit HexDigit )
+        >{ mark=p; }
+        %{ appendStringBufferCodePt(decodeAsciiHex(mark, p)); };
 
 HexEscapeSequence =
-    "x" HexDigit HexDigit;
+    "x" HexDigit HexDigit
+        >{ mark=p; }
+        %{ appendStringBufferCodePt(decodeAsciiHex(mark, p)); };
 
 UnicodeCombiningMark =
     # FIXME: \u{Mn} | \u{Mc}
     0xCC ( 0x80 .. 0xFF ) |
-    0xCD ( 0x00 .. 0xAF );
+    0xCD ( 0 .. 0xAF );
 
 UnicodeDigit =
     # FIXME: \u{Nd}
-    [0-9];
+    [0-9]
+        >{ mark=p; }
+        %{ appendStringBufferUTF8(mark, p); };
 
 LineContinuation =
     "\\" LineTerminatorSequence;
@@ -137,52 +153,67 @@ UnicodeConnectorPunctuation =
     "_";
 
 MultiLineComment =
-    "/*" ( any* - ( any* "*/" any* ) ) "*/";
+    "/*" any* :>> "*/";
 
 SingleLineComment =
-    "//" ( any* - LineTerminatorSequence );
+    "//" (any -- LineTerminatorSequence)* LineTerminatorSequence
+    # Bummer, wish we could just "match" eof...
+    $eof{
+        appendStringBufferUTF8(ts, p--);
+        visitor.visitComment(resetStringBuffer(), tsLine, tsOffset);
+        fbreak;
+    };
 
 Comment =
     MultiLineComment |
     SingleLineComment;
 
 IdentifierStart =
-    UnicodeLetter |
-    "$" |
-    "_" |
+    ( UnicodeLetter |
+     "$" |
+     "_" )
+        >{ mark=p; }
+        %{ appendStringBufferUTF8(mark, p); } |
     "\\" UnicodeEscapeSequence;
 
 IdentifierPart =
     IdentifierStart |
-    UnicodeCombiningMark |
-    UnicodeDigit |
-    UnicodeConnectorPunctuation |
-    ZWNJ |
-    ZWJ;
+    ( UnicodeCombiningMark |
+      UnicodeDigit |
+      UnicodeConnectorPunctuation |
+      ZWNJ |
+      ZWJ )
+        >{ mark=p; }
+        %{ appendStringBufferUTF8(mark, p); };
 
 IdentifierName =
     IdentifierStart IdentifierPart*;
 
 EscapeSequence =
     CharacterEscapeSequence |
-    "0" | # FIXME: lookahead not DecimalDigit
+    "0" # FIXME: lookahead not DecimalDigit
+        %{ appendStringBufferCodePt(0); } |
     HexEscapeSequence |
     UnicodeEscapeSequence;
 
 # JSON5 parts:
 JSON5DoubleStringCharacter =
-    ( any - ( '"' | "\\" | LineTerminatorSequence ) ) |
-    "\\" EscapeSequence |
-    LineContinuation |
-    LS |
-    PS;
+    ([^"\\] -- LineTerminatorSequence)+
+        >{ mark=p; }
+        %{ appendStringBufferUTF8(mark, p); }
+    (   "\\" ( LineTerminatorSequence | EscapeSequence )
+        ( [^"\\] -- LineTerminatorSequence ) *
+            >{ mark=p; }
+            %{ appendStringBufferUTF8(mark, p); } )*;
 
 JSON5SingleStringCharacter =
-    ( any - ( "'" | "\\" | LineTerminatorSequence ) ) |
-    "\\" EscapeSequence |
-    LineContinuation |
-    LS |
-    PS;
+    ([^'\\] -- LineTerminatorSequence)+
+        >{ mark=p; }
+        %{ appendStringBufferUTF8(mark, p); }
+    (   "\\" ( LineTerminatorSequence | EscapeSequence )
+        ([^'\\] -- LineTerminatorSequence)*
+            >{ mark=p; }
+            %{ appendStringBufferUTF8(mark, p); } )*;
 
 JSON5String =
     '"' JSON5DoubleStringCharacter* '"' |
@@ -202,36 +233,44 @@ JSON5Number =
 JSON5Identifier =
     IdentifierName;
 
-JSON5Punctuator =
-    "{" @{ visitor.startObject(tsLine, tsOffset); } |
-    "}" @{ visitor.endObject(tsLine, tsOffset); } |
-    "[" @{ visitor.startArray(tsLine, tsOffset); } |
-    "]" @{ visitor.endArray(tsLine, tsOffset); } |
-    "," @{ visitor.append(tsLine, tsOffset); } |
-    ":" @{ visitor.endObjectKey(tsLine, tsOffset); };
-
-JSON5Token =
-    JSON5Identifier @{ visitor.visit(resetStringBuffer(), tsLine, tsOffset); } |
-    JSON5Punctuator |
-    JSON5String @{ visitor.visit(resetStringBuffer(), tsLine, tsOffset); } |
-    JSON5Number @{ visitor.visit(resetNumber(), tsLine, tsOffset); };
-
-NullLiteral =
-    "null" @{ visitor.visitNull(tsLine, tsOffset); };
-
-BooleanLiteral =
-    "true" @{ visitor.visit(true, tsLine, tsOffset); } |
-    "false" @{ visitor.visit(false, tsLine, tsOffset); };
+# Accumulate at most one line before emitting a token:
+Space =
+    ( WhiteSpace* LineTerminatorSequence ) | WhiteSpace+;
 
 # JSON5InputElement
 main := |*
-    WhiteSpace;
-    LineTerminatorSequence;
-    Comment;
-    NullLiteral >{ tokenStart(); };
-    BooleanLiteral > { tokenStart(); };
-    JSON5Token > { tokenStart(); };
-    any { visitor.unexpectedByte(data.get(p), tsLine, tsOffset); };
+    Space              > { tokenStart(); }
+        {   appendStringBufferUTF8(ts, te);
+            visitor.visitSpace(resetStringBuffer(), tsLine, tsOffset); };
+    Comment            > { tokenStart(); }
+        {   appendStringBufferUTF8(ts, te);
+            visitor.visitComment(resetStringBuffer(), tsLine, tsOffset); };
+    "{"                > { tokenStart(); }
+        { visitor.startObject(tsLine, tsOffset); };
+    "}"                > { tokenStart(); }
+        { visitor.endObject(tsLine, tsOffset); };
+    "["                > { tokenStart(); }
+        { visitor.startArray(tsLine, tsOffset); };
+    "]"                > { tokenStart(); }
+        { visitor.endArray(tsLine, tsOffset); };
+    ","                > { tokenStart(); }
+        { visitor.append(tsLine, tsOffset); };
+    ":"                > { tokenStart(); }
+        { visitor.endObjectKey(tsLine, tsOffset); };
+    "null"             > { tokenStart(); }
+        { visitor.visitNull(tsLine, tsOffset); };
+    "true"             > { tokenStart(); }
+        { visitor.visit(true, tsLine, tsOffset); };
+    "false"            > { tokenStart(); }
+        { visitor.visit(false, tsLine, tsOffset); };
+    JSON5Identifier    > { tokenStart(); }
+        { visitor.visit(resetStringBuffer(), tsLine, tsOffset); };
+    JSON5String        > { tokenStart(); }
+        { visitor.visit(resetStringBuffer(), tsLine, tsOffset); };
+    JSON5Number        > { tokenStart(); }
+        { visitor.visit(resetNumber(), tsLine, tsOffset); };
+    any                > { tokenStart(); }
+        { visitor.unexpectedByte(data.get(p), tsLine, tsOffset); };
 *|;
 
 }%%

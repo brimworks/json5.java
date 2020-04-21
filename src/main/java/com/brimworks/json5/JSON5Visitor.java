@@ -5,6 +5,14 @@ package com.brimworks.json5;
  */
 interface JSON5Visitor {
     /**
+     * Indicates we found a comment.
+     */
+    default void visitComment(String comment, int line, long offset) {}
+    /**
+     * Indicates we found space.
+     */
+    default void visitSpace(String space, int line, long offset) {}
+    /**
      * Indicates a null value was found.
      */
     default void visitNull(int line, long offset) {}
@@ -50,4 +58,8 @@ interface JSON5Visitor {
      * Indicates an unexpected character found in the input.
      */
     default void unexpectedByte(byte ch, int line, long offset) {}
+    /**
+     * Indicates the end of stream has been reached.
+     */
+    default void endOfStream(int line, long offset) {};
 }

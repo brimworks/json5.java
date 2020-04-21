@@ -5,10 +5,14 @@ import java.util.Collections;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JSON5Location {
     private static final int MAX_LINE_LEN = 5 * 1024;
+    private static Logger log = Logger.getLogger("" + JSON5Location.class);
 
     @FunctionalInterface
     public interface Read {
@@ -19,7 +23,7 @@ public class JSON5Location {
          * @param skip the number of bytes of input to skip before reading.
          * @return the number of bytes placed into the array.
          */
-        public int read(byte[] into, long skip) throws IOException;
+        public int read(ByteBuffer into, long skip) throws IOException;
     }
 
     private long byteOffset;
@@ -29,15 +33,19 @@ public class JSON5Location {
     private Read readSource;
     private String contextLine;
     private int contextLineOffset = -1;
+    private StackTraceElement[] constructedAt;
 
-    public JSON5Location(long byteOffset, int lineNumber, String sourceName, List<JSON5Key> path, Read readSource) {
+    public JSON5Location(int lineNumber, long byteOffset, String sourceName, List<JSON5Key> path, Read readSource) {
         if (null == path)
             throw new NullPointerException("Expected path to be non null");
+        if (byteOffset < 0)
+            throw new IndexOutOfBoundsException("byteOffset must be greater than zero");
         this.byteOffset = byteOffset;
         this.lineNumber = lineNumber;
         this.sourceName = sourceName;
         this.path = path;
         this.readSource = readSource;
+        this.constructedAt = Thread.currentThread().getStackTrace();
     }
 
     public long getByteOffset() {
@@ -71,20 +79,30 @@ public class JSON5Location {
         try {
             if (byteOffset < contextOffset) {
                 contextOffset = (int) byteOffset;
-                contextBytesLen = readSource.read(contextBytes, 0);
+                contextBytesLen = readSource.read(ByteBuffer.wrap(contextBytes), 0);
             } else {
-                contextBytesLen = readSource.read(contextBytes, byteOffset - contextOffset);
+                contextBytesLen = readSource.read(ByteBuffer.wrap(contextBytes), byteOffset - contextOffset);
             }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+        if (contextBytesLen < contextOffset) {
+            String msg = "JSON5Location was passed in a Source that returned insufficient bytes, expected at least="
+                    + contextOffset + ", but got length=" + contextBytesLen;
+            Throwable ex = new Throwable(msg, null, false, true) {
+            };
+            ex.setStackTrace(constructedAt);
+            log.log(Level.WARNING, msg, ex);
+            readSource = null;
+            return null;
+        }
         int lineBegins = contextOffset;
-        while (lineBegins-- > 0 && !isNewline(contextBytes, lineBegins, contextBytesLen)) {
-        }
+        while (lineBegins > 0 && !isNewline(contextBytes, lineBegins - 1, contextBytesLen))
+            lineBegins--;
         int lineEnds = contextOffset;
-        while (lineEnds++ < contextBytesLen && !isNewline(contextBytes, lineEnds, contextBytesLen)) {
-        }
-        contextLine = new String(contextBytes, lineBegins, lineEnds, UTF_8);
+        while (lineEnds < contextBytesLen && !isNewline(contextBytes, lineEnds, contextBytesLen))
+            lineEnds++;
+        contextLine = new String(contextBytes, lineBegins, lineEnds-lineBegins, UTF_8);
         contextLineOffset = contextOffset - lineBegins;
         // Now adjust contextLineOffset for UTF-8 char sizes vs UTF-16:
         for (int idx = 0; idx < contextLineOffset; idx++) {
@@ -132,7 +150,7 @@ public class JSON5Location {
                 .append("\n");
         String contextLine = getContextLine();
         if (null != contextLine) {
-            sb.append(contextLine).append(maskWithCaret(contextLine, getContextLineOffset()));
+            sb.append(contextLine).append("\n").append(maskWithCaret(contextLine, getContextLineOffset()));
         }
         sb.append("location: /");
         boolean isFirst = true;
@@ -149,7 +167,7 @@ public class JSON5Location {
 
     // Is this a UTF-8 newline?
     private static boolean isNewline(byte[] bytes, int position, int limit) {
-        switch (bytes[0] & 0xFF) {
+        switch (bytes[position] & 0xFF) {
             case 0x0A:
             case 0x0D:
                 return true;
@@ -157,7 +175,7 @@ public class JSON5Location {
                 if (limit - position < 3)
                     return false;
                 // Handle LS & PS
-                return bytes[1] == 0x80 && (bytes[2] & 0xFE) == 0xA8;
+                return bytes[position + 1] == 0x80 && (bytes[position + 2] & 0xFE) == 0xA8;
         }
         return false;
     }
@@ -170,9 +188,10 @@ public class JSON5Location {
                 int width = Wcwidth.of(ch);
                 char[] fill = new char[width];
                 Arrays.fill(fill, ' ');
-                sb.replace(idx, width, new String(fill));
+                sb.replace(idx, idx + width, new String(fill));
             }
         }
+        sb.append("^\n");
         return sb.toString();
     }
 }

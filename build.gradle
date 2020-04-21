@@ -39,6 +39,7 @@ test {
     }
     testLogging {
         exceptionFormat = "full"
+        showStandardStreams = true
     }
 }
 
@@ -69,6 +70,12 @@ fileTree("src/main/ragel").matching {
 }
 
 compileJava {
-  dependsOn ragels
-  source = ['src/main/java', 'build/generated-src/java']
+    dependsOn ragels
+}
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated-src/java/'
+        }
+    }
 }

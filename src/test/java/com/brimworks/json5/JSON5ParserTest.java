@@ -18,30 +18,27 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import java.util.stream.Collectors;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 
-public class JSON5LexerTest {
+public class JSON5ParserTest {
     public static List<String> json5Tests() throws IOException {
+        // return Collections.singletonList("src/test/resources/json5-tests/comments/inline-comment-following-top-level-value.json5");
         return Files.walk(Paths.get("src/test/resources/json5-tests")).filter(
                 path -> !path.toFile().isDirectory() && path.getFileName().toString().matches(".*[.](json5?|js|txt)$"))
                 .map(Path::toString).collect(Collectors.toList());
     }
+    private JSON5Parser parser = new JSON5Parser();
 
     @Tag("unit")
     @ParameterizedTest
     @MethodSource
     public void json5Tests(String path) throws IOException {
-        JSON5Lexer lexer = new JSON5Lexer(new JSON5Visitor() {
-        });
-        FileChannel input;
-        try {
-            input = FileChannel.open(Paths.get(path), READ);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
         boolean expectSuccess = path.matches(".*[.]json5?$");
         boolean ok = false;
         try {
-            lexer.lex(input);
+            parser.parse(Paths.get(path));
             ok = true;
         } catch (Exception ex) {
             if (expectSuccess)

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "src/main/java/com/brimworks/json5/impl"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "automatic"
+	}
+}

@@ -44,17 +44,17 @@ abstract public class Ragel {
     /**
      * Generic mark, typically used for marking a subtoken.
      */
-    protected int mark = 0;
+    protected int mark;
 
     /**
      * Offset is relative to the entire input we have parsed.
      */
-    protected long offset = 0;
+    protected long offset;
 
     /**
      * Subclasses should increment this when a newline is found.
      */
-    protected int line = 0;
+    protected int line;
 
     /**
      * Used for accumulating a string token value.
@@ -192,7 +192,42 @@ abstract public class Ragel {
             stringBuffer = fresh;
         }
     }
-
+    protected void appendStringBufferCodePt(int codePoint) {
+        int width = codePoint < 0x10000 ? 1 : 2;
+        // Enough space?
+        if ( stringBuffer.position() >= stringBuffer.limit() - width ) {
+            CharBuffer fresh = CharBuffer.allocate(stringBuffer.capacity()*2);
+            fresh.put(stringBuffer);
+            stringBuffer = fresh;
+        }
+        if ( 1 == width ) {
+            stringBuffer.put((char)codePoint);
+        } else {
+            stringBuffer.put(Character.highSurrogate(codePoint));
+            stringBuffer.put(Character.lowSurrogate(codePoint));
+        }
+    }
+    /**
+     * Decodes ASCII hex number
+     * @param begin offset within data inclusive
+     * @param end offset within data exclusive
+     * @return number
+     */
+    protected int decodeAsciiHex(int begin, int end) {
+        int result = 0;
+        for (; begin < end; begin++ ) {
+            byte ch = data.get(begin);
+            if ( ch <= '9' ) {
+                ch -= (byte)'0';
+            } else if ( ch <= 'F' ) {
+                ch -= (byte)'A';
+            } else if ( ch <= 'f' ) {
+                ch -= (byte)'a';
+            }
+            result = result*16 + ch;
+        }
+        return result;
+    }
     /**
      * Obtain and reset the value in the string buffer.
      * @return the current value in the string buffer.
@@ -211,24 +246,25 @@ abstract public class Ragel {
     public boolean lex(ByteBuffer data, boolean eof) {
         this.data = data;
         // Obtain the bounds:
-        ts = data.position();
         pe = data.limit();
+        enter(data.position());
         if ( eof ) this.eof = pe;
-        enter();
         ragelExec();
-        boolean progress = ts > data.position();
+        int pos = ts >= 0 ? ts : p;
+        boolean progress = pos > data.position();
         // Update the position:
-        data.position(ts);
-        exit();
+        data.position(pos);
+        exit(pos);
         return progress;
     }
     public void lex(ReadableByteChannel in) throws IOException {
         reset();
         ByteBuffer buff = ByteBuffer.allocate(8*1024);
-        while ( true ) {
-            if ( in.read(buff) <= 0 ) break;
+        boolean eof = false;
+        while ( !eof ) {
+            eof = in.read(buff) <= 0;
             buff.flip();
-            if ( !lex(buff, false) ) {
+            if ( !lex(buff, eof) && !eof ) {
                 ByteBuffer fresh = ByteBuffer.allocate(buff.capacity()*2);
                 fresh.put(buff);
                 buff = fresh;
@@ -236,27 +272,31 @@ abstract public class Ragel {
                 buff.compact();
             }
         }
-        lex(buff, true);
     }
     public void reset() {
         ragelInit();
-        line = 0;
+        line = 1;
         offset = 0;
-        mark = 0;
-        resetStringBuffer();
-        resetNumber();
+        mark = -1;
+        stringBuffer.clear();
+        numberValue = 0;
+        numberValueBig = null;
+        numberSign = 1;
+        numberScale = 0;
     }
-    protected void enter() {
-        p += ts;
-        te += ts;
-        mark += ts;
-        offset -= ts;
+    protected void enter(int pos) {
+        if ( ts >= 0 ) ts += pos;
+        p += pos;
+        if ( te >= 0 ) te += pos;
+        if ( mark >= 0 ) mark += ts;
+        offset -= pos;
     }
-    protected void exit() {
-        p -= ts;
-        te -= ts;
-        mark -= ts;
-        offset += ts;
+    protected void exit(int pos) {
+        if ( ts >= 0 ) ts -= pos;
+        p -= pos;
+        if ( te >= 0 ) te -= pos;
+        if ( mark >= 0 ) mark -= pos;
+        offset += pos;
     }
     /**
      * Subclasses should implement via {@code write init}
