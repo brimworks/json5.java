@@ -4,6 +4,9 @@ import com.brimworks.json5.ragel.Ragel;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implements the lexer using ragel, please see {@link JSON5Parser} which uses this.
+ */
 class JSON5Lexer extends Ragel {
     private JSON5Visitor visitor;
 
@@ -15,10 +18,19 @@ class JSON5Lexer extends Ragel {
      */
     private int tsLine;
     private long tsOffset;
+    /**
+     * Keep track of if we are within a fractional part of a number.
+     */
+    private boolean inFraction;
 
     private void tokenStart() {
         tsLine = line;
         tsOffset = offset + p;
+    }
+    protected void exponentOverflow(int num) {
+        // FIXME: Can a number have a newline within it? If so, the
+        // line number will be incorrect. I don't think this is possible though.
+        visitor.exponentOverflow(tsLine, offset + p);
     }
 
     %% machine json5;
@@ -69,23 +81,28 @@ NonZeroDigit = [1-9];
 ExponentIndicator = [eE];
 
 HexIntegerLiteral =
-    "0" [xX] HexDigit+;
+    "0" [xX] HexDigit+ @{ appendNumber(decodeAsciiHex(p), 16, inFraction); };
 
 DecimalIntegerLiteral =
     "0" |
-    NonZeroDigit DecimalDigit*;
+    ( NonZeroDigit DecimalDigit* )
+        @{ appendNumber(data.get(p)-'0', 10, inFraction); };
 
+# FIXME: Scale number with exponent.
 SignedInteger =
-    DecimalDigit+ |
-    "+" DecimalDigit+ |
-    "-" DecimalDigit+;
+    ( "+" | "-" %{ negateExponent(); } )? DecimalDigit+
+        @{ appendExponent(data.get(p)-'0'); };
 
 ExponentPart =
     ExponentIndicator SignedInteger;
 
 DecimalLiteral =
-    DecimalIntegerLiteral "." DecimalDigit* ExponentPart? |
-    "." DecimalDigit+ ExponentPart? |
+    DecimalIntegerLiteral "." %{ inFraction=true; }
+        DecimalDigit* @{ appendNumber(data.get(p)-'0', 10, inFraction); }
+        ExponentPart? |
+    "." %{ inFraction=true; }
+        DecimalDigit+ @{ appendNumber(data.get(p)-'0', 10, inFraction); }
+        ExponentPart? |
     DecimalIntegerLiteral ExponentPart?;
 
 NumericLiteral =
@@ -221,13 +238,13 @@ JSON5String =
 
 JSON5NumericLiteral =
     NumericLiteral |
-    "Infinity" |
-    "NaN";
+    "Infinity" %{ setNumber(Double.POSITIVE_INFINITY); } |
+    "NaN" %{ setNumber(Double.NaN); };
 
 JSON5Number =
     JSON5NumericLiteral |
     "+" JSON5NumericLiteral |
-    "-" JSON5NumericLiteral;
+    "-" @{ negateNumber(); } JSON5NumericLiteral;
 
 # FIXME: Don't we want to exclude reserved words so it is valid EMCAScript?
 JSON5Identifier =
@@ -267,7 +284,7 @@ main := |*
         { visitor.visit(resetStringBuffer(), tsLine, tsOffset); };
     JSON5String        > { tokenStart(); }
         { visitor.visit(resetStringBuffer(), tsLine, tsOffset); };
-    JSON5Number        > { tokenStart(); }
+    JSON5Number        > { tokenStart(); inFraction=false; }
         { visitor.visit(resetNumber(), tsLine, tsOffset); };
     any                > { tokenStart(); }
         { visitor.unexpectedByte(data.get(p), tsLine, tsOffset); };

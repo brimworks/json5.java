@@ -7,10 +7,14 @@ import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.StandardOpenOption;
 import java.nio.channels.FileChannel;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Validates input conforms to the rules of the JSON5 grammer.
+ * Validates input conforms to the rules of the JSON5 grammer and emits this
+ * structure to a visitor. The visitor can build a tree, transform input, or do
+ * anything with the JSON5 input tokens.
  */
 public class JSON5Parser {
     private static final JSON5Key EMPTY = new JSON5Key("");
@@ -135,6 +139,10 @@ public class JSON5Parser {
                     getLocation(line, offset));
         }
 
+        public void exponentOverflow(int line, long offset) {
+            throw new JSON5ParseError(String.format("Exponent exceeds %d", Integer.MAX_VALUE), getLocation(line, offset));
+        }
+
         public void endOfStream(int line, long offset) {
             transitionState(State.EOF, line, offset);
             if (null != visitor)
@@ -142,24 +150,54 @@ public class JSON5Parser {
         }
     });
 
+    /**
+     * Simply create a parser.
+     */
     public JSON5Parser() {
     }
 
+    /**
+     * Create a parser and set the visitor.
+     * 
+     * @param visitor
+     */
     public JSON5Parser(JSON5Visitor visitor) {
         this.visitor = visitor;
     }
 
-    public void setVisitor(JSON5Visitor visitor) {
+    /**
+     * Switch to a different visitor implementation.
+     * 
+     * @param visitor
+     * @return this
+     */
+    public JSON5Parser setVisitor(JSON5Visitor visitor) {
         this.visitor = visitor;
+        return this;
     }
 
+    /**
+     * Obtain the current location within the input, useful when implementing a
+     * visitor.
+     * 
+     * @param line   the current line (passed into the visitor methods)
+     * @param offset the current byte offset from the beginning of the UTF-8 encoded
+     *               file (passed into the visitor methods)
+     * @return a new {@code JSON5Location} which will display source-text messages.
+     */
     public JSON5Location getLocation(int line, long offset) {
         return new JSON5Location(line, offset, sourceName, new ArrayList<>(path), readSource);
     }
 
-    public void parse(Path path) throws IOException {
+    /**
+     * Parse a JSON5 document at the specified path.
+     * 
+     * @param path location of JSON5 document.
+     * @throws JSON5ParseError if source-text does not conform to JSON5.
+     */
+    public void parse(Path path) throws IOException, JSON5ParseError {
         if (null == path)
-            throw new NullPointerException("Expected path to be non-null");
+            throw new NullPointerException("Unexpected null path to parse");
         FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
         parse(fc, path.toString(), (buff, skip) -> {
             fc.position(skip);
@@ -167,7 +205,54 @@ public class JSON5Parser {
         });
     }
 
-    public void parse(ReadableByteChannel in, String sourceName, JSON5Location.Read readSource) throws IOException {
+    /**
+     * Parse a JSON5 document from a string.
+     * 
+     * @param str string to parse
+     * @param sourceName name of source location used in errors
+     * @throws JSON5ParseError if a parse error is encountered.
+     */
+    public void parse(String str, String sourceName) throws JSON5ParseError {
+        parse(ByteBuffer.wrap(str.getBytes(UTF_8)), sourceName);
+    }
+
+    /**
+     * Parse a JSON5 document from a byte buffer, if you have a {@code byte[]}, simply use {@link ByteBuffer.wrap(byte[])} to wrap it
+     * into a {@code ByteBuffer}.
+     * 
+     * @param utf8 utf8 encoded byte buffer
+     * @param sourceName name of source location used in errors
+     * @throws JSON5ParseError if a parse error is encountered.
+     */
+    public void parse(ByteBuffer utf8, String sourceName) throws JSON5ParseError {
+        this.sourceName = sourceName;
+        this.readSource = (into, skip) -> {
+            ByteBuffer slice = utf8.slice();
+            int len = into.remaining();
+            into.put(utf8, offset+(int)skip, len);
+            return len;
+        };
+        this.state = State.INITIAL;
+        this.path.clear();
+        this.begins.clear();
+        lexer.reset();
+        lexer.lex(utf8, true);
+    }
+    /**
+     * Parse a JSON5 document from a {@code ReadableByteChannel}. Note that you can
+     * use {@link java.nio.channels.Channels#newChannel(java.io.InputStream)} to
+     * convert an input stream into a channel.
+     * 
+     * @param in         required ReadableByteChannel
+     * @param sourceName optional name of source text location (for better errors).
+     * @param readSource optional function for obtaining source-text error message.
+     * @throws IOException     if {@code in}
+     * @throws JSON5ParseError if source-text does not conform to JSON5.
+     */
+    public void parse(ReadableByteChannel in, String sourceName, JSON5Location.Read readSource)
+            throws IOException, JSON5ParseError {
+        if (null == in)
+            throw new NullPointerException("Expected ReadableByteChannel to be non-null");
         this.sourceName = sourceName;
         this.readSource = readSource;
         this.state = State.INITIAL;
