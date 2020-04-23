@@ -34,7 +34,7 @@ public class JSON5Parser {
     private String sourceName;
     private JSON5Location.Read readSource;
 
-    private JSON5Lexer lexer = new JSON5Lexer(new JSON5Visitor() {
+    private JSON5Lexer lexer = new JSON5Lexer(new JSON5Lexer.Visitor() {
         public void visitComment(String comment, int line, long offset) {
             if (null != visitor)
                 visitor.visitComment(comment, line, offset);

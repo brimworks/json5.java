@@ -8,11 +8,24 @@ import java.util.List;
  * Implements the lexer using ragel, please see {@link JSON5Parser} which uses this.
  */
 class JSON5Lexer extends Ragel {
-    private JSON5Visitor visitor;
-
-    JSON5Lexer(JSON5Visitor visitor) {
-        this.visitor = visitor;
+    /**
+     * A few callbacks are specific to the Lexer -> Parser and are thus not
+     * part of the public JSON5Visitor interface.
+     */
+    interface Visitor extends JSON5Visitor {
+        /**
+         * Indicates an unexpected character found in the input.
+         */
+        default void unexpectedByte(byte ch, int line, long offset) {}
+        /**
+         * Indicates an exponent number was specified in the source-text
+         * which is larger than {@link Integer.MAX_VALUE}.
+         */
+        default void exponentOverflow(int line, long offset) {}
     }
+
+    private Visitor visitor;
+
     /**
      * Maintains the location of the start of the current token.
      */
@@ -22,6 +35,15 @@ class JSON5Lexer extends Ragel {
      * Keep track of if we are within a fractional part of a number.
      */
     private boolean inFraction;
+
+    /**
+     * Constructs a lexer which emits tokens of the JSON5 language.
+     *
+     * @param visitor to use when tokens are found.
+     */
+    JSON5Lexer(Visitor visitor) {
+        this.visitor = visitor;
+    }
 
     private void tokenStart() {
         tsLine = line;
@@ -53,22 +75,10 @@ class JSON5Lexer extends Ragel {
 // Assumes input in UTF-8 byte array encoding.
 %%{
 
-# Various unicode characters encoded as UTF-8:
-LS = 0xE2 0x80 0xA8;
-PS = 0xE2 0x80 0xA9;
-ZWNJ = 0xE2 0x80 0x8C;
-ZWJ = 0xE2 0x80 0x8D;
-BOM = 0xEF 0xBB 0xBF;
-TAB = 0x09;
-VT = 0x0B;
-FF = 0x0C;
-SP = 0x20;
-LF = 0x0A;
-CR = 0x0D;
-NBSP = 0xC2 0xA0;
+include Unicode_UTF8 "Unicode_UTF8.rl";
 
 # ECMA 26.2 parts:
-WhiteSpace = TAB | VT | FF | SP | NBSP | BOM; # FIXME: \u{Zs}
+WhiteSpace = TAB | VT | FF | SP | NBSP | BOM | U_Zs;
 LineTerminatorSequence =
     ( LF |
       CR | # FIXME: lookahead not LF
@@ -110,8 +120,7 @@ NumericLiteral =
     HexIntegerLiteral;
 
 UnicodeLetter =
-    # FIXME: \u{Lu} | \u{Ll} | \u{Lt} | \u{Lm} | \u{Lo} | \u{Nl}
-    [a-zA-Z];
+    U_Lu | U_Ll | U_Lt | U_Lm | U_Lo | U_Nl; 
 
 SingleEscapeCharacter =
     ( "'" |
@@ -152,13 +161,11 @@ HexEscapeSequence =
         %{ appendStringBufferCodePt(decodeAsciiHex(mark, p)); };
 
 UnicodeCombiningMark =
-    # FIXME: \u{Mn} | \u{Mc}
-    0xCC ( 0x80 .. 0xFF ) |
-    0xCD ( 0 .. 0xAF );
+    U_Mn |
+    U_Mc;
 
 UnicodeDigit =
-    # FIXME: \u{Nd}
-    [0-9]
+    U_Nd
         >{ mark=p; }
         %{ appendStringBufferUTF8(mark, p); };
 
@@ -166,8 +173,7 @@ LineContinuation =
     "\\" LineTerminatorSequence;
 
 UnicodeConnectorPunctuation =
-    # FIXME: \u{Pc}
-    "_";
+    U_Pc;
 
 MultiLineComment =
     "/*" any* :>> "*/";

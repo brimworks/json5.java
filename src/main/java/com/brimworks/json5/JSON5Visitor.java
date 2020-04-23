@@ -58,13 +58,4 @@ interface JSON5Visitor {
      * Indicates the end of stream has been reached.
      */
     default void endOfStream(int line, long offset) {};
-    /**
-     * Indicates an unexpected character found in the input.
-     */
-    default void unexpectedByte(byte ch, int line, long offset) {}
-    /**
-     * Indicates an exponent number was specified in the source-text
-     * which is larger than {@link Integer.MAX_VALUE}.
-     */
-    default void exponentOverflow(int line, long offset) {}
 }

@@ -218,14 +218,7 @@ abstract public class Ragel {
                 return result;
             }
         }
-        /*
-         * else if (scale > 0) { // Handle positive scale (may still be integer)
-         * BigInteger result =
-         * BigInteger.valueOf(value).multiply(BigInteger.valueOf(10).pow(scale)); try {
-         * value = result.longValueExact(); } catch (ArithmeticException ex) { // Can't
-         * represent as a long: if (numberSign < 0) result = result.negate(); return
-         * result; } }
-         */
+
         // Simple long:
         if (value <= Byte.MAX_VALUE) {
             return (byte) (value * numberSign);
