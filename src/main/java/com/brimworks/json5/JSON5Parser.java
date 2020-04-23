@@ -71,8 +71,10 @@ public class JSON5Parser {
         }
 
         public void endObject(int line, long offset) {
-            if (path.isEmpty() || !path.getLast().isObject()) {
+            if (path.isEmpty()) {
                 error("Unexpected '}'", line, offset);
+            } else if (path.getLast().isArray()) {
+                error("Expected ']' to match with '[' on line " + begins.getLast().getLineNumber(), line, offset);
             }
             state = State.VALUE;
             path.removeLast();
@@ -90,8 +92,10 @@ public class JSON5Parser {
         }
 
         public void endArray(int line, long offset) {
-            if (path.isEmpty() || !path.getLast().isArray()) {
+            if (path.isEmpty()) {
                 error("Unexpected ']'", line, offset);
+            } else if (!path.getLast().isArray()) {
+                error("Expected '}' to match with '{' on line " + begins.getLast().getLineNumber(), line, offset);
             }
             state = State.VALUE;
             path.removeLast();
@@ -140,11 +144,22 @@ public class JSON5Parser {
         }
 
         public void exponentOverflow(int line, long offset) {
-            throw new JSON5ParseError(String.format("Exponent exceeds %d", Integer.MAX_VALUE), getLocation(line, offset));
+            throw new JSON5ParseError(String.format("Exponent exceeds %d", Integer.MAX_VALUE),
+                    getLocation(line, offset));
         }
 
         public void endOfStream(int line, long offset) {
             transitionState(State.EOF, line, offset);
+            if (!path.isEmpty()) {
+                JSON5Key key = path.getLast();
+                if (key.isArray()) {
+                    error("Expected ']' before end of file to match with '[' on line "
+                            + begins.getLast().getLineNumber(), line, offset);
+                } else {
+                    error("Expected '}' before end of file to match with '{' on line "
+                            + begins.getLast().getLineNumber(), line, offset);
+                }
+            }
             if (null != visitor)
                 visitor.endOfStream(line, offset);
         }
@@ -208,7 +223,7 @@ public class JSON5Parser {
     /**
      * Parse a JSON5 document from a string.
      * 
-     * @param str string to parse
+     * @param str        string to parse
      * @param sourceName name of source location used in errors
      * @throws JSON5ParseError if a parse error is encountered.
      */
@@ -217,10 +232,11 @@ public class JSON5Parser {
     }
 
     /**
-     * Parse a JSON5 document from a byte buffer, if you have a {@code byte[]}, simply use {@link ByteBuffer.wrap(byte[])} to wrap it
-     * into a {@code ByteBuffer}.
+     * Parse a JSON5 document from a byte buffer, if you have a {@code byte[]},
+     * simply use {@link ByteBuffer.wrap(byte[])} to wrap it into a
+     * {@code ByteBuffer}.
      * 
-     * @param utf8 utf8 encoded byte buffer
+     * @param utf8       utf8 encoded byte buffer
      * @param sourceName name of source location used in errors
      * @throws JSON5ParseError if a parse error is encountered.
      */
@@ -228,8 +244,9 @@ public class JSON5Parser {
         this.sourceName = sourceName;
         this.readSource = (into, skip) -> {
             ByteBuffer slice = utf8.slice();
-            int len = into.remaining();
-            into.put(utf8, offset+(int)skip, len);
+            slice.position(slice.position() + (int) skip);
+            int len = Math.min(slice.remaining(), into.remaining());
+            into.put(slice);
             return len;
         };
         this.state = State.INITIAL;
@@ -238,6 +255,7 @@ public class JSON5Parser {
         lexer.reset();
         lexer.lex(utf8, true);
     }
+
     /**
      * Parse a JSON5 document from a {@code ReadableByteChannel}. Note that you can
      * use {@link java.nio.channels.Channels#newChannel(java.io.InputStream)} to

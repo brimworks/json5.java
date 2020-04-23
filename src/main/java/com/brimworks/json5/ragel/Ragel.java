@@ -177,7 +177,7 @@ abstract public class Ragel {
         if (0 != numberValueSpecial)
             return numberValueSpecial;
         // Calculate the final scale:
-        int scale = numberExponentSign * (numberExponent + numberScale);
+        int scale = numberExponentSign * (numberScale + numberExponent);
         if (null != numberValueBig) {
             // Handle big numbers.
             BigInteger result = numberSign < 0 ? numberValueBig.negate() : numberValueBig;
@@ -189,41 +189,50 @@ abstract public class Ragel {
             return result;
         }
         long value = numberValue;
-        if (scale < 0) {
-            // NOTE: Due to the base conversion, numbers
-            // can not be perfectly represented.
-            double base2Scale = scale * LOG_10_TO_2_RATIO;
-            // Must represent as a floating point value:
-            if (value < (1 << 23) && base2Scale < (1 << 8)) {
-                // IEEE 754 single precision:
+        if (scale != 0) {
+            int significantBase2Digits = 63 - Long.numberOfLeadingZeros(value);
+
+            // NOTE: Due to the base conversion, fractional numbers can not be
+            // perfectly represented when converting bases. A nice description of why
+            // is here: http://cs.furman.edu/digitaldomain/more/ch6/dec_frac_to_bin.htm
+            // To deal with this, I simply check if the significant base 2 digits
+            // can fit into the mantissa, and that the base2 approximate exponent
+            // also fits. Due to this inprecision, Float.MAX_VALUE = 3.4028235E38 will
+            // be promoted to a Double, but lowering the significant digits by one will
+            // remain to be a float = 3.402823E38.
+            // 
+            double base2Exponent = significantBase2Digits + LOG_10_TO_2_RATIO * scale;
+            if (significantBase2Digits <= 23 && base2Exponent <= (double) (1 << 7)) {
+                // 23 bit significand and signed 8 bit for exponent:
+                // IEEE 754 single precision
+                // https://en.wikipedia.org/wiki/Single-precision_floating-point_format
                 return (float) (numberSign * value * Math.pow(10, scale));
-            } else if (value < (1 << 52) && base2Scale < (1 << 11)) {
-                // IEEE 754 double precision:
+            } else if (significantBase2Digits <= 52 && base2Exponent <= (double) (1 << 10)) {
+                // 52 bit significand and signed 11 bit for exponent:
+                // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
                 return numberSign * value * Math.pow(10, scale);
             } else {
-                BigDecimal result = new BigDecimal(BigInteger.valueOf(value), scale);
+                BigDecimal result = new BigDecimal(BigInteger.valueOf(numberSign*value), -1*scale);
                 if (numberSign < 0)
                     result = result.negate();
                 return result;
             }
-        } else if (scale > 0) {
-            // Handle positive scale (may still be integer)
-            BigInteger result = BigInteger.valueOf(value).multiply(BigInteger.valueOf(10).pow(scale));
-            try {
-                value = result.longValueExact();
-            } catch (ArithmeticException ex) {
-                // Can't represent as a long:
-                if (numberSign < 0) result = result.negate();
-                return result;
-            }
         }
+        /*
+         * else if (scale > 0) { // Handle positive scale (may still be integer)
+         * BigInteger result =
+         * BigInteger.valueOf(value).multiply(BigInteger.valueOf(10).pow(scale)); try {
+         * value = result.longValueExact(); } catch (ArithmeticException ex) { // Can't
+         * represent as a long: if (numberSign < 0) result = result.negate(); return
+         * result; } }
+         */
         // Simple long:
         if (value <= Byte.MAX_VALUE) {
-            return (byte)(value * numberSign);
+            return (byte) (value * numberSign);
         } else if (value <= Short.MAX_VALUE) {
-            return (short)(value * numberSign);
+            return (short) (value * numberSign);
         } else if (value <= Integer.MAX_VALUE) {
-            return (int)(value * numberSign);
+            return (int) (value * numberSign);
         }
         return value * numberSign;
     }
