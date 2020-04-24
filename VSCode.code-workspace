@@ -1,9 +1,6 @@
 {
 	"folders": [
 		{
-			"path": "src/main/java/com/brimworks/json5/impl"
-		},
-		{
 			"path": "."
 		}
 	],
