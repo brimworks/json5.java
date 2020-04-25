@@ -1,2 +1,5 @@
 before_install:
-   - sudo apt-get install -qq ragel
+   - curl -O 'http://archive.ubuntu.com/ubuntu/pool/universe/r/ragel/ragel_6.8-1build1_amd64.deb'
+   - dpkg -x $HOME/ragel_6.8-1build1_amd64.deb $HOME
+env:
+  PATH: "$PATH:$HOME/usr/bin"
