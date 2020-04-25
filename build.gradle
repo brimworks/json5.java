@@ -1,17 +1,25 @@
-allprojects {
-    apply plugin: 'java-library'
-    apply plugin: 'jacoco'
-    group = 'com.github'
-    version = '1.0-SNAPSHOT'
-    repositories {
-        jcenter()
-        maven {
-            url 'https://jitpack.io'
-        }
+plugins {
+    id "com.jfrog.bintray" version "1.8.5" apply false
+}
+
+repositories {
+    jcenter()
+    maven {
+        url 'https://jitpack.io'
     }
 }
 
+
+allprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'jacoco'
+    apply plugin: 'maven-publish'
+    group = 'com.github'
+    version = '0.0.1'
+}
+
 subprojects {
+    apply plugin: "com.jfrog.bintray"
     dependencies {
         // Use JUnit Jupiter API for testing.
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
@@ -42,6 +50,63 @@ subprojects {
         from javadoc.destinationDir
     }
 
+    def pomConfig = {
+        licenses {
+            license {
+                name "MIT"
+                url "https://gist.githubusercontent.com/brimworks/9a75a113ace22b964d70ea9894af1fb1/raw/920257f41116ef6be325ad71858f4c15706cf12e/LICENSE.txt"
+                distribution "repo"
+            }
+        }
+        developers {
+            developer {
+                id "brimworks"
+                name "Brian Maher"
+                email "brian@brimworks.com"
+            }
+        }    
+        scm {
+           url "https://github.com/brimworks/brimworks.java"
+        }
+    }
+
+    println "project.version=" + project.version
+    publishing {
+        publications {
+            MyPublication(MavenPublication) {
+                from components.java
+                artifact javadocJar
+                artifact sourcesJar
+                groupId 'com.brimworks'
+                artifactId project.name
+                version project.version
+                pom.withXml {
+                    def root = asNode()
+                    root.appendNode('description', 'Brimworks implementation of '+project.name)
+                    root.appendNode('name', project.name)
+                    root.appendNode('url', 'https://github.com/brimworks/brimworks.java')
+                    root.children().last() + pomConfig
+                }
+            }
+        }
+    }
+    bintray {
+        user = System.getenv('BINTRAY_USER')
+        key = System.getenv('BINTRAY_KEY')
+        pkg {
+            repo = 'brimworks.java'
+            name = 'brimworks.java'
+            userOrg = 'brimworks'
+            licenses = ['MIT']
+            vcsUrl = 'https://github.com/brimworks/brimworks.java.git'
+            version {
+                name = project.version
+                released  = new Date()
+                vcsTag = project.version
+            }
+        }
+        publications = ['MyPublication']
+    }
 }
 
 task codeCoverageReport(type: JacocoReport) {
