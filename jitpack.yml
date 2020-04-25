@@ -1,2 +1,2 @@
 before_install:
-   - apt-get install -qq ragel
+   - sudo apt-get install -qq ragel
