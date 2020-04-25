@@ -1,11 +1,13 @@
-
 allprojects {
     apply plugin: 'java-library'
+    apply plugin: 'jacoco'
     group = 'com.github'
     version = '1.0-SNAPSHOT'
     repositories {
         jcenter()
-        maven { url 'https://jitpack.io' }
+        maven {
+            url 'https://jitpack.io'
+        }
     }
 }
 
@@ -40,4 +42,22 @@ subprojects {
         from javadoc.destinationDir
     }
 
+}
+
+task codeCoverageReport(type: JacocoReport) {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
+
+    reports {
+        xml.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
+        csv.enabled false
+    }
+}
+
+codeCoverageReport.dependsOn {
+    subprojects*.test
 }
