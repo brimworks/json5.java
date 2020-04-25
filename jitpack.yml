@@ -1,2 +1,2 @@
 before_install:
-   - apt-cache search ragel || apk update && apk search -v
+   - apt-get install -qq ragel
