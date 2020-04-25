@@ -13,15 +13,21 @@ class JSON5Lexer extends Ragel {
      * part of the public JSON5Visitor interface.
      */
     interface Visitor extends JSON5Visitor {
-        /**
-         * Indicates an unexpected character found in the input.
-         */
-        default void unexpectedByte(byte ch, int line, long offset) {}
-        /**
-         * Indicates an exponent number was specified in the source-text
-         * which is larger than {@link Integer.MAX_VALUE}.
-         */
-        default void exponentOverflow(int line, long offset) {}
+        void visitNull(int line, long offset);
+        void visit(boolean val, int line, long offset);
+        void visit(String val, int line, long offset);
+        void visit(Number val, int line, long offset);
+        void startObject(int line, long offset);
+        void endObject(int line, long offset);
+        void startArray(int line, long offset);
+        void endArray(int line, long offset);
+        void visitComment(String comment, int line, long offset);
+        void visitSpace(String space, int line, long offset);
+        void visitColon(int line, long offset);
+        void visitComma(int line, long offset);
+        void endOfStream(int line, long offset);
+        void unexpectedByte(byte ch, int line, long offset);
+        void exponentOverflow(int line, long offset);
     }
 
     private Visitor visitor;
@@ -277,9 +283,9 @@ main := |*
     "]"                > { tokenStart(); }
         { visitor.endArray(tsLine, tsOffset); };
     ","                > { tokenStart(); }
-        { visitor.append(tsLine, tsOffset); };
+        { visitor.visitComma(tsLine, tsOffset); };
     ":"                > { tokenStart(); }
-        { visitor.endObjectKey(tsLine, tsOffset); };
+        { visitor.visitColon(tsLine, tsOffset); };
     "null"             > { tokenStart(); }
         { visitor.visitNull(tsLine, tsOffset); };
     "true"             > { tokenStart(); }

@@ -19,13 +19,31 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class JSON5Parser {
     private static final JSON5Key EMPTY = new JSON5Key("");
 
+    private static class LineOffset {
+        private int line;
+        private long offset;
+
+        public LineOffset(int line, long offset) {
+            this.line = line;
+            this.offset = offset;
+        }
+
+        public int getLine() {
+            return this.line;
+        }
+
+        public long getOffset() {
+            return this.offset;
+        }
+    }
+
     private static enum State {
         INITIAL, STRING_VALUE, VALUE, OBJECT, OBJECT_KEY, ARRAY, APPEND, EOF;
     }
 
     // Per instance:
     private Deque<JSON5Key> path = new ArrayDeque<>();
-    private Deque<JSON5Location> begins = new ArrayDeque<>();
+    private Deque<LineOffset> begins = new ArrayDeque<>();
     private String lastString = null;
     private JSON5Visitor visitor = null;
 
@@ -34,85 +52,121 @@ public class JSON5Parser {
     private String sourceName;
     private JSON5Location.Read readSource;
 
+    private void visitValue(int line, long offset) {
+        if (path.isEmpty()) {
+            return;
+        } else if (path.getLast().isArray()) {
+            visitor.endArrayValue(line, offset);
+        } else {
+            visitor.endObjectPair(line, offset);
+        }
+    }
+
     private JSON5Lexer lexer = new JSON5Lexer(new JSON5Lexer.Visitor() {
+        @Override
         public void visitComment(String comment, int line, long offset) {
             if (null != visitor)
                 visitor.visitComment(comment, line, offset);
         }
 
+        @Override
         public void visitSpace(String space, int line, long offset) {
             if (null != visitor)
                 visitor.visitSpace(space, line, offset);
         }
 
+        @Override
         public void visitNull(int line, long offset) {
             transitionState(State.VALUE, line, offset);
-            if (null != visitor)
+            if (null != visitor) {
                 visitor.visitNull(line, offset);
+                visitValue(line, offset);
+            }
         }
 
+        @Override
         public void visit(boolean val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
-            if (null != visitor)
+            if (null != visitor) {
                 visitor.visit(val, line, offset);
+                visitValue(line, offset);
+            }
         }
 
+        @Override
         public void visit(String val, int line, long offset) {
+            boolean isObjectKey = state == State.OBJECT || state == State.APPEND;
             transitionState(State.STRING_VALUE, line, offset);
             lastString = val;
-            if (null != visitor)
+            if (null != visitor) {
                 visitor.visit(val, line, offset);
+                if (!isObjectKey)
+                    visitValue(line, offset);
+            }
         }
 
+        @Override
         public void visit(Number val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
-            if (null != visitor)
+            if (null != visitor) {
                 visitor.visit(val, line, offset);
+                visitValue(line, offset);
+            }
         }
 
+        @Override
         public void endObject(int line, long offset) {
             if (path.isEmpty()) {
                 error("Unexpected '}'", line, offset);
             } else if (path.getLast().isArray()) {
-                error("Expected ']' to match with '[' on line " + begins.getLast().getLineNumber(), line, offset);
+                error("Expected ']' to match with '[' on line " + begins.getLast().getLine(), line, offset);
             }
             state = State.VALUE;
             path.removeLast();
-            begins.removeLast();
-            if (null != visitor)
+            LineOffset beginning = begins.removeLast();
+            if (null != visitor) {
                 visitor.endObject(line, offset);
+                visitValue(beginning.getLine(), beginning.getOffset());
+            }
         }
 
+        @Override
         public void startObject(int line, long offset) {
             transitionState(State.OBJECT, line, offset);
-            begins.addLast(getLocation(line, offset));
+            begins.addLast(new LineOffset(line, offset));
             path.addLast(EMPTY);
-            if (null != visitor)
+            if (null != visitor) {
                 visitor.startObject(line, offset);
+            }
         }
 
+        @Override
         public void endArray(int line, long offset) {
             if (path.isEmpty()) {
                 error("Unexpected ']'", line, offset);
             } else if (!path.getLast().isArray()) {
-                error("Expected '}' to match with '{' on line " + begins.getLast().getLineNumber(), line, offset);
+                error("Expected '}' to match with '{' on line " + begins.getLast().getLine(), line, offset);
             }
             state = State.VALUE;
             path.removeLast();
-            begins.removeLast();
-            if (null != visitor)
+            LineOffset beginning = begins.removeLast();
+            if (null != visitor) {
                 visitor.endArray(line, offset);
+                visitValue(beginning.getLine(), beginning.getOffset());
+            }
         }
 
+        @Override
         public void startArray(int line, long offset) {
             transitionState(State.ARRAY, line, offset);
-            begins.addLast(getLocation(line, offset));
+            begins.addLast(new LineOffset(line, offset));
             path.addLast(new JSON5Key(0));
             if (null != visitor)
                 visitor.startArray(line, offset);
         }
 
-        public void endObjectKey(int line, long offset) {
+        @Override
+        public void visitColon(int line, long offset) {
             if (path.isEmpty()) {
                 error("Unexpected ':'", line, offset);
             }
@@ -120,10 +174,11 @@ public class JSON5Parser {
             path.removeLast();
             path.addLast(new JSON5Key(lastString));
             if (null != visitor)
-                visitor.endObjectKey(line, offset);
+                visitor.visitColon(line, offset);
         }
 
-        public void append(int line, long offset) {
+        @Override
+        public void visitComma(int line, long offset) {
             if (path.isEmpty()) {
                 error("Unexpected ','", line, offset);
             }
@@ -135,29 +190,32 @@ public class JSON5Parser {
                 path.addLast(EMPTY);
             }
             if (null != visitor)
-                visitor.append(line, offset);
+                visitor.visitComma(line, offset);
         }
 
+        @Override
         public void unexpectedByte(byte ch, int line, long offset) {
             throw new JSON5ParseError(String.format("Unexpected character 0x%02X", ch & 0xFF),
                     getLocation(line, offset));
         }
 
+        @Override
         public void exponentOverflow(int line, long offset) {
             throw new JSON5ParseError(String.format("Exponent exceeds %d", Integer.MAX_VALUE),
                     getLocation(line, offset));
         }
 
+        @Override
         public void endOfStream(int line, long offset) {
             transitionState(State.EOF, line, offset);
             if (!path.isEmpty()) {
                 JSON5Key key = path.getLast();
                 if (key.isArray()) {
-                    error("Expected ']' before end of file to match with '[' on line "
-                            + begins.getLast().getLineNumber(), line, offset);
+                    error("Expected ']' before end of file to match with '[' on line " + begins.getLast().getLine(),
+                            line, offset);
                 } else {
-                    error("Expected '}' before end of file to match with '{' on line "
-                            + begins.getLast().getLineNumber(), line, offset);
+                    error("Expected '}' before end of file to match with '{' on line " + begins.getLast().getLine(),
+                            line, offset);
                 }
             }
             if (null != visitor)
@@ -209,7 +267,7 @@ public class JSON5Parser {
      * 
      * @param path location of JSON5 document.
      * @throws JSON5ParseError if source-text does not conform to JSON5.
-     * @throws IOException if there was an error reading the file at Path.
+     * @throws IOException     if there was an error reading the file at Path.
      */
     public void parse(Path path) throws IOException, JSON5ParseError {
         if (null == path)

@@ -1,0 +1,21 @@
+/**
+ * Example JSON5 document
+ */
+{
+    fname: "George",
+    lname: "Henderson",
+    pets: [
+        {
+            type: "duck",
+            name: "Donald"
+        },
+        {
+            type: "dog",
+            name: "Oscar",
+        },
+    ],
+    friends: [],
+    favoriteFood: null,
+    isNice: false,
+    age: 35,
+}

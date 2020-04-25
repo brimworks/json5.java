@@ -2,15 +2,10 @@ plugins {
     id "com.jfrog.bintray" version "1.8.5" apply false
 }
 
-repositories {
-    jcenter()
-    maven {
-        url 'https://jitpack.io'
-    }
-}
-
-
 allprojects {
+    repositories {
+        jcenter()
+    }
     apply plugin: 'java-library'
     apply plugin: 'jacoco'
     apply plugin: 'maven-publish'
@@ -70,7 +65,6 @@ subprojects {
         }
     }
 
-    println "project.version=" + project.version
     publishing {
         publications {
             MyPublication(MavenPublication) {
