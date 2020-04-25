@@ -187,6 +187,9 @@ public class Wcwidth {
    *
    * This implementation assumes that wchar_t characters are encoded
    * in ISO 10646.
+   * 
+   * @param codePoint is the code point to obtain a width of.
+   * @return the width of that codepoint on a terminal screen.
    */
   public static int of(int codePoint) {
     // test for 8-bit control characters

@@ -1,0 +1,38 @@
+// Special instructions to build the ragel file.
+def ragels = []
+
+fileTree("src/main/ragel").matching {
+    include "**/*.java.rl"
+}.visit { input ->
+    if ( input.directory ) return
+    def ragel = task "${input.relativePath.toString().replaceAll("[/\\\\:<>\"?*|]", " ")}" (type:Ragel) {
+        inputFile input.file.absoluteFile
+        outputFile file("${buildDir}/generated-src/java/" + input.relativePath - ".rl")
+    }
+    ragels << ragel
+}
+
+compileJava {
+    dependsOn ragels
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated-src/java/'
+        }
+    }
+}
+
+abstract class Ragel extends DefaultTask {
+    @InputFile
+    abstract File inputFile
+    @OutputFile
+    abstract File outputFile
+    @TaskAction
+    void execute(InputChanges inputChanges) {
+        project.exec {
+            commandLine "ragel", "-J", "-o", outputFile, inputFile
+        }
+    }
+};

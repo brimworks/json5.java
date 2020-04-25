@@ -1,13 +1,15 @@
 
-subprojects {
+allprojects {
     apply plugin: 'java-library'
-    group = 'com.brimworks'
-    version = '1.0'
-
+    group = 'com.github'
+    version = '1.0-SNAPSHOT'
     repositories {
         jcenter()
+        maven { url 'https://jitpack.io' }
     }
+}
 
+subprojects {
     dependencies {
         // Use JUnit Jupiter API for testing.
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
@@ -28,39 +30,14 @@ subprojects {
         }
     }
 
-    def ragels = []
-    fileTree("src/main/ragel").matching {
-        include "**/*.java.rl"
-    }.visit { input ->
-        if ( input.directory ) return
-        def ragel = task "${input.relativePath.toString().replaceAll("[/\\\\:<>\"?*|]", " ")}" (type:Ragel) {
-            inputFile input.file.absoluteFile
-            outputFile file("${buildDir}/generated-src/java/" + input.relativePath - ".rl")
-        }
-        ragels << ragel
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allJava
     }
 
-    compileJava {
-        dependsOn ragels
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
     }
-    sourceSets {
-        main {
-            java {
-                srcDirs 'build/generated-src/java/'
-            }
-        }
-    }
+
 }
-
-abstract class Ragel extends DefaultTask {
-    @InputFile
-    abstract File inputFile
-    @OutputFile
-    abstract File outputFile
-    @TaskAction
-    void execute(InputChanges inputChanges) {
-        project.exec {
-            commandLine "ragel", "-J", "-o", outputFile, inputFile
-        }
-    }
-};

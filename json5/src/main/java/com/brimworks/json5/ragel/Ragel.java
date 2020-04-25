@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * 
  * <pre>
  * public class Lexer extends Ragel {
- *     %% getkey (data.get(p) & 0xff);
+ *     %% getkey (data.get(p) &#38; 0xff);
  *     %% alphtype int;
  *     %% write data;
  *     &#64;Override
@@ -122,7 +122,7 @@ abstract public class Ragel {
     /**
      * An internal number decimal exponent is scaled.
      * 
-     * @param number
+     * @param number 0-9 digit of a decimal exponent to append.
      */
     protected void appendExponent(int number) {
         int newExponent = numberExponent * 10 + number;
@@ -293,7 +293,7 @@ abstract public class Ragel {
     /**
      * Append a code point to the internal string buffer.
      * 
-     * @param codePoint
+     * @param codePoint code point to append to the internal string buffer.
      */
     protected void appendStringBufferCodePt(int codePoint) {
         if (null == stringBuffer)
@@ -339,7 +339,7 @@ abstract public class Ragel {
      * Subclasses should implement by handling an exponent overflow condition. This
      * occurs if {@link #appendExponent(int)} is called and the int was not large
      * enough to hold the exponent (input specified an exponent greater than
-     * {@link Integer.MAX_VALUE}). Note that the internal number state remains
+     * {@link Integer#MAX_VALUE}). Note that the internal number state remains
      * unchanged, so if this is overridden with an empty body implementation, one
      * could recover from the error by ignoring the subsequent digits of the
      * expontent.

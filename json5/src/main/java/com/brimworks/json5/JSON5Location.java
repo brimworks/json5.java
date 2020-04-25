@@ -22,6 +22,7 @@ public class JSON5Location {
          * @param into is the array to populate.
          * @param skip the number of bytes of input to skip before reading.
          * @return the number of bytes placed into the array.
+         * @throws IOException if the underlying source could not be read.
          */
         public int read(ByteBuffer into, long skip) throws IOException;
     }
@@ -102,7 +103,7 @@ public class JSON5Location {
         int lineEnds = contextOffset;
         while (lineEnds < contextBytesLen && !isNewline(contextBytes, lineEnds, contextBytesLen))
             lineEnds++;
-        contextLine = new String(contextBytes, lineBegins, lineEnds-lineBegins, UTF_8);
+        contextLine = new String(contextBytes, lineBegins, lineEnds - lineBegins, UTF_8);
         contextLineOffset = contextOffset - lineBegins;
         // Now adjust contextLineOffset for UTF-8 char sizes vs UTF-16:
         for (int idx = 0; idx < contextLineOffset; idx++) {
@@ -143,6 +144,10 @@ public class JSON5Location {
      *      ^
      * location: ${jsonPath}
      * </pre>
+     * 
+     * @param format a {@link String#format(String, Object...)} string
+     * @param args   is a list of arguments to pass to the format string.
+     * @return a nicely formatted string suitable for line precise errors.
      */
     public String format(String format, Object... args) {
         StringBuilder sb = new StringBuilder();

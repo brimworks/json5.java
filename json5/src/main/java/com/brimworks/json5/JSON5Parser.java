@@ -174,7 +174,7 @@ public class JSON5Parser {
     /**
      * Create a parser and set the visitor.
      * 
-     * @param visitor
+     * @param visitor set the visitor to this
      */
     public JSON5Parser(JSON5Visitor visitor) {
         this.visitor = visitor;
@@ -183,7 +183,7 @@ public class JSON5Parser {
     /**
      * Switch to a different visitor implementation.
      * 
-     * @param visitor
+     * @param visitor set the visitor
      * @return this
      */
     public JSON5Parser setVisitor(JSON5Visitor visitor) {
@@ -209,6 +209,7 @@ public class JSON5Parser {
      * 
      * @param path location of JSON5 document.
      * @throws JSON5ParseError if source-text does not conform to JSON5.
+     * @throws IOException if there was an error reading the file at Path.
      */
     public void parse(Path path) throws IOException, JSON5ParseError {
         if (null == path)
@@ -233,7 +234,7 @@ public class JSON5Parser {
 
     /**
      * Parse a JSON5 document from a byte buffer, if you have a {@code byte[]},
-     * simply use {@link ByteBuffer.wrap(byte[])} to wrap it into a
+     * simply use {@link ByteBuffer#wrap(byte[])} to wrap it into a
      * {@code ByteBuffer}.
      * 
      * @param utf8       utf8 encoded byte buffer
