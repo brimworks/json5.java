@@ -18,6 +18,10 @@ parser.setVisitor(
     new JSON5Visitor() {
         @Override
         public void visit(Number val, int line, long offset) {
+            if ( !(num instanceof Double) && !(num instanceof Long) ) {
+                // Example of obtaining line-precise error messages:
+                throw new JSON5ParseError("Unsupported numeric type", parser.getLocation(line, offset));
+            }
             stack.add(val);
         }
 
