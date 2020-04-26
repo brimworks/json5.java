@@ -10,7 +10,7 @@ allprojects {
     apply plugin: 'jacoco'
     apply plugin: 'maven-publish'
     group = 'com.github'
-    version = '0.0.1'
+    version = System.getenv('VERSION')
 }
 
 subprojects {
