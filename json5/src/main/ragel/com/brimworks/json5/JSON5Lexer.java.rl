@@ -2,6 +2,8 @@ package com.brimworks.json5;
 
 import com.brimworks.json5.ragel.Ragel;
 import java.util.ArrayList;
+import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -12,11 +14,14 @@ class JSON5Lexer extends Ragel {
      * A few callbacks are specific to the Lexer -> Parser and are thus not
      * part of the public JSON5Visitor interface.
      */
-    interface Visitor extends JSON5Visitor {
+    interface Visitor {
         void visitNull(int line, long offset);
         void visit(boolean val, int line, long offset);
         void visit(String val, int line, long offset);
-        void visit(Number val, int line, long offset);
+        void visitNumber(BigDecimal val, int line, long offset);
+        void visitNumber(BigInteger val, int line, long offset);
+        void visitNumber(double val, int line, long offset);
+        void visitNumber(long val, int line, long offset);
         void startObject(int line, long offset);
         void endObject(int line, long offset);
         void startArray(int line, long offset);
@@ -55,12 +60,33 @@ class JSON5Lexer extends Ragel {
         tsLine = line;
         tsOffset = offset + p;
     }
+
+    @Override
     protected void exponentOverflow(int num) {
         // FIXME: Can a number have a newline within it? If so, the
         // line number will be incorrect. I don't think this is possible though.
         visitor.exponentOverflow(tsLine, offset + p);
     }
 
+    @Override
+    protected void visitNumber(BigInteger bigInt) {
+        visitor.visitNumber(bigInt, tsLine, tsOffset);
+    }
+
+    @Override
+    protected void visitNumber(BigDecimal bigDec) {
+        visitor.visitNumber(bigDec, tsLine, tsOffset);
+    }
+
+    @Override
+    protected void visitNumber(long smallInt) {
+        visitor.visitNumber(smallInt, tsLine, tsOffset);
+    }
+
+    @Override
+    protected void visitNumber(double smallDec) {
+        visitor.visitNumber(smallDec, tsLine, tsOffset);
+    }
     %% machine json5;
     %% alphtype int;
     %% getkey (data.get(p) & 0xff);
@@ -292,12 +318,12 @@ main := |*
         { visitor.visit(true, tsLine, tsOffset); };
     "false"            > { tokenStart(); }
         { visitor.visit(false, tsLine, tsOffset); };
+    JSON5Number        > { tokenStart(); inFraction=false; }
+        { resetNumber(); };
     JSON5Identifier    > { tokenStart(); }
         { visitor.visit(resetStringBuffer(), tsLine, tsOffset); };
     JSON5String        > { tokenStart(); }
         { visitor.visit(resetStringBuffer(), tsLine, tsOffset); };
-    JSON5Number        > { tokenStart(); inFraction=false; }
-        { visitor.visit(resetNumber(), tsLine, tsOffset); };
     any                > { tokenStart(); }
         { visitor.unexpectedByte(data.get(p), tsLine, tsOffset); };
 *|;

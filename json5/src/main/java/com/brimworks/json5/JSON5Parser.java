@@ -9,6 +9,8 @@ import java.nio.file.StandardOpenOption;
 import java.nio.channels.FileChannel;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -106,10 +108,37 @@ public class JSON5Parser {
         }
 
         @Override
-        public void visit(Number val, int line, long offset) {
+        public void visitNumber(BigInteger val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
-                visitor.visit(val, line, offset);
+                visitor.visitNumber(val, line, offset);
+                visitValue(line, offset);
+            }
+        }
+
+        @Override
+        public void visitNumber(BigDecimal val, int line, long offset) {
+            transitionState(State.VALUE, line, offset);
+            if (null != visitor) {
+                visitor.visitNumber(val, line, offset);
+                visitValue(line, offset);
+            }
+        }
+
+        @Override
+        public void visitNumber(long val, int line, long offset) {
+            transitionState(State.VALUE, line, offset);
+            if (null != visitor) {
+                visitor.visitNumber(val, line, offset);
+                visitValue(line, offset);
+            }
+        }
+
+        @Override
+        public void visitNumber(double val, int line, long offset) {
+            transitionState(State.VALUE, line, offset);
+            if (null != visitor) {
+                visitor.visitNumber(val, line, offset);
                 visitValue(line, offset);
             }
         }

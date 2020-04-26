@@ -79,20 +79,12 @@ public class JSON5ParserTest {
     @Tag("unit")
     @Test
     public void parseIntegers() throws IOException {
-        assertParsed("123", Byte.valueOf((byte) 123));
-        assertParsed("12345", Short.valueOf((short) 12345));
-        assertParsed("1234567890", Integer.valueOf(1234567890));
+        assertParsed("0", 0L);
+        assertParsed("123", 123L);
+        assertParsed("12345", 12345L);
+        assertParsed("1234567890", 1234567890L);
 
         // MIN/MAX (although note that true MAX is promoted to long)
-        assertParsed("127", Byte.valueOf((byte) 127));
-        assertParsed("-127", Byte.valueOf((byte) -127));
-
-        assertParsed("32767", Short.valueOf((short) 32767));
-        assertParsed("-32767", Short.valueOf((short) -32767));
-
-        assertParsed("2147483647", Integer.valueOf(2147483647));
-        assertParsed("-2147483647", Integer.valueOf(-2147483647));
-
         assertParsed("9223372036854775807", Long.valueOf(Long.MAX_VALUE));
         assertParsed("-9223372036854775807", Long.valueOf(-Long.MAX_VALUE));
 
@@ -103,19 +95,56 @@ public class JSON5ParserTest {
     @Tag("unit")
     @Test
     public void parseFloats() throws IOException {
-        assertParsed("10.0", Float.valueOf(10.0f));
-        assertParsed("3.402823E38", Float.valueOf((float) 3.402823E38));
-        assertParsed("" + (-3.402823E38), Float.valueOf((float) -3.402823E38));
+        assertParsed("0.0", Double.valueOf(0.0));
+        assertParsed("10.0", Double.valueOf(10.0));
 
-        assertParsed("3.402824E38", Float.valueOf((float) 3.402824E38));
-        assertParsed("" + (-3.402824E38), Float.valueOf((float) -3.402824E38));
+        // Threshold we should be promoting to BigDecimal for floating values:
+        assertParsed("9.007199254740991e+15", Double.valueOf(9.007199254740991e+15));
+        assertParsed("9.007199254740992e+15", new BigDecimal("9.007199254740992e+15"));
 
-        assertParsed("1.797693134862315E308", Double.valueOf(1.797693134862315E308));
-        assertParsed("-1.797693134862315E308", Double.valueOf(-1.797693134862315E308));
+        assertParsed("-9.007199254740991e+15", Double.valueOf(-9.007199254740991e+15));
+        assertParsed("-9.007199254740992e+15", new BigDecimal("-9.007199254740992e+15"));
 
-        // +1 should flop over to BigDecimal:
-        assertParsed("1.7976931348623158E308", new BigDecimal(BigInteger.valueOf(17976931348623158L), -(308 - 16)));
+        assertParsed("9.1e+15", new BigDecimal("9.1e+15"));
+        assertParsed("-9.1e+15", new BigDecimal("-9.1e+15"));
 
+        // Threshold we should be promoting to BigInteger for integer values:
+        assertParsed("9223372036854775807", Long.valueOf(9223372036854775807L));
+        assertParsed("9223372036854775808", new BigInteger("9223372036854775808"));
+
+        assertParsed("-9223372036854775807", Long.valueOf(-9223372036854775807L));
+        assertParsed("-9223372036854775808", new BigInteger("-9223372036854775808"));
+
+        // Ensure the decimal point causes BigDecimal representation.
+        assertParsed("9223372036854775808.0", new BigDecimal("9223372036854775808.0"));
+        assertParsed("-9223372036854775808.0", new BigDecimal("-9223372036854775808.0"));
+
+        // Number of zeros threshold:
+        assertParsed("9.000000000000000", Double.valueOf(9.0));
+        assertParsed("9.0000000000000000", new BigDecimal("9.0000000000000000"));
+        assertParsed("-9.000000000000000", Double.valueOf(-9.0));
+        assertParsed("-9.0000000000000000", new BigDecimal("-9.0000000000000000"));
+
+        // Special numbers:
+        assertParsed("NaN", Double.valueOf(Double.NaN));
+        assertParsed("-Infinity", Double.valueOf(Double.NEGATIVE_INFINITY));
+        assertParsed("+Infinity", Double.valueOf(Double.POSITIVE_INFINITY));
+    }
+
+    @Tag("unit")
+    @Test
+    public void parseHex() throws IOException {
+        assertParsed("0x0", Long.valueOf(0));
+        assertParsed("0xf", Long.valueOf(0xf));
+        assertParsed("0xF", Long.valueOf(0xF));
+        assertParsed("0xDDD", Long.valueOf(0xDDD));
+
+        // Moment of hex number threshold turning into big integer:
+        assertParsed("0x7FFFFFFFFFFFFFFF", Long.valueOf(0x7FFFFFFFFFFFFFFFL));
+        assertParsed("0x8000000000000000", new BigInteger("9223372036854775808"));
+
+        assertParsed("-0x7FFFFFFFFFFFFFFF", Long.valueOf(-0x7FFFFFFFFFFFFFFFL));
+        assertParsed("-0x8000000000000000", new BigInteger("-9223372036854775808"));
     }
 
     @Tag("unit")
@@ -186,7 +215,7 @@ public class JSON5ParserTest {
             person.put("favoriteFood", null);
             person.put("isNice", false);
             person.put("friends", new ArrayList<Object>());
-            person.put("age", (byte)35);
+            person.put("age", 35L);
         }), value);
     }
 

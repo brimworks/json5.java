@@ -42,7 +42,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * ready along with some handy methods to build a numeric or string token.
  */
 abstract public class Ragel {
-    private static final double LOG_10_TO_2_RATIO = Math.log(10) / Math.log(2);
+    // 3.32192809489
+    // private static final double LOG_10_TO_2_RATIO = 3.32423208195; //Math.log(10)
+    // / Math.log(2);
+    private static final double LOG_10 = Math.log(10);
 
     /**
      * Standard "interface to host" variables. Be sure to properly define getkey so
@@ -157,12 +160,11 @@ abstract public class Ragel {
     }
 
     /**
-     * Obtain and reset the value in the number.
-     * 
-     * @return the current value in the number
+     * Calls the appropriate {@code visitNumber()} method with the number in the
+     * number buffer and reset the internal number buffer.
      */
-    protected Number resetNumber() {
-        Number result = getNumber();
+    protected void resetNumber() {
+        getNumber();
         numberValue = 0;
         numberValueBig = null;
         numberValueSpecial = 0;
@@ -170,64 +172,90 @@ abstract public class Ragel {
         numberScale = 0;
         numberExponent = 0;
         numberExponentSign = 1;
-        return result;
     }
 
-    private Number getNumber() {
-        if (0 != numberValueSpecial)
-            return numberValueSpecial;
-        // Calculate the final scale:
-        int scale = numberExponentSign * (numberScale + numberExponent);
+    /**
+     * Called by {@link #resetNumber()} if the number found is an integer to large
+     * to fit in a long.
+     * 
+     * @param bigInt the number
+     */
+    abstract protected void visitNumber(BigInteger bigInt);
+
+    /**
+     * Called by {@link #resetNumber()} if the number found is a floating point
+     * number to large to fit in a double.
+     * 
+     * @param bigDec the number
+     */
+    abstract protected void visitNumber(BigDecimal bigDec);
+
+    /**
+     * Called by {@link #resetNumber()} if the number found is an integer.
+     * 
+     * @param smallInt the number
+     */
+    abstract protected void visitNumber(long smallInt);
+
+    /**
+     * Called by {@link #resetNumber()} if the number found is a floting point
+     * number.
+     * 
+     * @param smallDec the number
+     */
+    abstract protected void visitNumber(double smallDec);
+
+    private void getNumber() {
+        if (0 != numberValueSpecial) {
+            visitNumber(numberSign*numberValueSpecial);
+            return;
+        }
         if (null != numberValueBig) {
+            int scale = numberScale + numberExponentSign * numberExponent;
             // Handle big numbers.
             BigInteger result = numberSign < 0 ? numberValueBig.negate() : numberValueBig;
-            if (scale < 0) {
-                return new BigDecimal(result, scale);
-            } else if (scale > 0) {
-                return result.multiply(BigInteger.valueOf(10).pow(scale));
-            }
-            return result;
-        }
-        long value = numberValue;
-        if (scale != 0) {
-            int significantBase2Digits = 63 - Long.numberOfLeadingZeros(value);
-
-            // NOTE: Due to the base conversion, fractional numbers can not be
-            // perfectly represented when converting bases. A nice description of why
-            // is here: http://cs.furman.edu/digitaldomain/more/ch6/dec_frac_to_bin.htm
-            // To deal with this, I simply check if the significant base 2 digits
-            // can fit into the mantissa, and that the base2 approximate exponent
-            // also fits. Due to this inprecision, Float.MAX_VALUE = 3.4028235E38 will
-            // be promoted to a Double, but lowering the significant digits by one will
-            // remain to be a float = 3.402823E38.
-            // 
-            double base2Exponent = significantBase2Digits + LOG_10_TO_2_RATIO * scale;
-            if (significantBase2Digits <= 23 && base2Exponent <= (double) (1 << 7)) {
-                // 23 bit significand and signed 8 bit for exponent:
-                // IEEE 754 single precision
-                // https://en.wikipedia.org/wiki/Single-precision_floating-point_format
-                return (float) (numberSign * value * Math.pow(10, scale));
-            } else if (significantBase2Digits <= 52 && base2Exponent <= (double) (1 << 10)) {
-                // 52 bit significand and signed 11 bit for exponent:
-                // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-                return numberSign * value * Math.pow(10, scale);
+            if (scale != 0) {
+                visitNumber(new BigDecimal(result, -1 * scale));
             } else {
-                BigDecimal result = new BigDecimal(BigInteger.valueOf(numberSign*value), -1*scale);
-                if (numberSign < 0)
-                    result = result.negate();
-                return result;
+                visitNumber(result);
             }
+            return;
+        } else if (0 == numberScale && 0 == numberExponent ) {
+            // Simple long:
+            visitNumber(numberValue * numberSign);
+            return;
         }
-
-        // Simple long:
-        if (value <= Byte.MAX_VALUE) {
-            return (byte) (value * numberSign);
-        } else if (value <= Short.MAX_VALUE) {
-            return (short) (value * numberSign);
-        } else if (value <= Integer.MAX_VALUE) {
-            return (int) (value * numberSign);
+        int scale = numberScale + numberExponentSign * numberExponent;
+        if (scale > 0) {
+            if (scale > 15) {
+                // Won't accurately fit in a double!
+                visitNumber(new BigDecimal(BigInteger.valueOf(numberSign * numberValue), -1 * scale));
+                return;
+            }
+            long num = numberValue;
+            for (int i = scale; i > 0; i--) {
+                num *= 10;
+                if (num >= 9007199254740992L) { // 2^53
+                    // Won't accurately fit in a double!
+                    visitNumber(new BigDecimal(BigInteger.valueOf(numberSign * numberValue), -1 * scale));
+                    return;
+                }
+            }
+            visitNumber((double) numberSign*num);
+        } else if (numberValue < 9007199254740992L) {
+            long num = numberValue;
+            for (int i= scale; i < 0; i++) {
+                if (num % 10 != 0) {
+                    // Won't accurately fit in a double!
+                    visitNumber(new BigDecimal(BigInteger.valueOf(numberSign * numberValue), -1 * scale));
+                    return;
+                }
+                num /= 10;
+            }
+            visitNumber((double) numberSign*num);
+        } else {
+            visitNumber(new BigDecimal(BigInteger.valueOf(numberSign * numberValue), -1 * scale));
         }
-        return value * numberSign;
     }
 
     /**
@@ -240,13 +268,13 @@ abstract public class Ragel {
     protected int decodeAsciiHex(int begin, int end) {
         int result = 0;
         for (; begin < end; begin++) {
-            byte ch = data.get(begin);
+            int ch = data.get(begin);
             if (ch <= '9') {
-                ch -= (byte) '0';
+                ch -= '0';
             } else if (ch <= 'F') {
-                ch -= (byte) 'A';
+                ch = (ch - 'A') + 10;
             } else if (ch <= 'f') {
-                ch -= (byte) 'a';
+                ch = (ch - 'a') + 10;
             }
             result = result * 16 + ch;
         }
@@ -260,13 +288,13 @@ abstract public class Ragel {
      * @return number
      */
     protected int decodeAsciiHex(int pos) {
-        int ch = data.get(pos) & 0xFF;
+        int ch = data.get(pos);
         if (ch <= '9') {
             return ch - '0';
         } else if (ch <= 'F') {
-            return ch - 'A';
+            return (ch - 'A') + 10;
         } else if (ch <= 'f') {
-            return ch - 'a';
+            return (ch - 'a') + 10;
         }
         throw new AssertionError(String.format("Unexpected ch=0x%02X, was not a hex character", ch));
     }
