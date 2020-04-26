@@ -2,7 +2,7 @@ Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/brimwor
 
 Build Health: [![](https://jitci.com/gh/brimworks/brimworks.java/svg)](https://jitci.com/gh/brimworks/brimworks.java)
 
-[Javadocs](https://www.javadoc.io/static/com.brimworks/json5/0.0.1/com/brimworks/json5/package-summary.html)
+[Javadocs](https://www.javadoc.io/doc/com.brimworks/json5)
 
 
 # JSON5 Library
