@@ -61,7 +61,7 @@ subprojects {
             }
         }    
         scm {
-           url "https://github.com/brimworks/brimworks.java"
+           url "https://github.com/brimworks/json5.java"
         }
     }
 
@@ -78,7 +78,7 @@ subprojects {
                     def root = asNode()
                     root.appendNode('description', 'Brimworks implementation of '+project.name)
                     root.appendNode('name', project.name)
-                    root.appendNode('url', 'https://github.com/brimworks/brimworks.java')
+                    root.appendNode('url', 'https://github.com/brimworks/json5.java')
                     root.children().last() + pomConfig
                 }
             }
@@ -88,11 +88,11 @@ subprojects {
         user = System.getenv('BINTRAY_USER')
         key = System.getenv('BINTRAY_KEY')
         pkg {
-            repo = 'brimworks.java'
-            name = 'brimworks.java'
+            repo = 'json5.java'
+            name = 'json5.java'
             userOrg = 'brimworks'
             licenses = ['MIT']
-            vcsUrl = 'https://github.com/brimworks/brimworks.java.git'
+            vcsUrl = 'https://github.com/brimworks/json5.java.git'
             version {
                 name = project.version
                 released  = new Date()

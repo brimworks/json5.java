@@ -1,6 +1,6 @@
-Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/brimworks.java/brimworks.java/images/download.svg?version=latest) ](https://bintray.com/brimworks/brimworks.java/brimworks.java/0.0.2/link)
+Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/json5.java/json5.java/images/download.svg?version=latest) ](https://bintray.com/brimworks/json5.java/json5.java/0.0.2/link)
 
-Build Health: [![](https://jitci.com/gh/brimworks/brimworks.java/svg)](https://jitci.com/gh/brimworks/brimworks.java)
+Build Health: [![](https://jitci.com/gh/brimworks/json5.java/svg)](https://jitci.com/gh/brimworks/json5.java)
 
 [Javadocs](https://www.javadoc.io/doc/com.brimworks/json5)
 
