@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>json5.java</name>
-	<comment>Project json5.java created by Buildship.</comment>
+	<name>databind</name>
+	<comment>Project databind created by Buildship.</comment>
 	<projects>
 	</projects>
 	<buildSpec>
