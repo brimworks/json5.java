@@ -20,6 +20,8 @@ public class DataBind implements TypeRegistry {
     private List<TypeFactoryRegistry> factoryRegistries = new ArrayList<>();
     private Map<Type, VisitType<?>> visits = new HashMap<>();
     private List<VisitTypeRegistry> visitRegistries = new ArrayList<>();
+    private IntFactory intFactory = null;
+    private LongFactory longFactory = null;
 
     /**
      * Obtain a builder instance for the same state as the this DataBind.
@@ -30,7 +32,7 @@ public class DataBind implements TypeRegistry {
         return new Builder(new DataBind(this));
     }
 
-    public static class Builder {
+    public static class Builder implements TypeRegistry.Builder {
         private DataBind instance;
 
         /**
@@ -38,6 +40,9 @@ public class DataBind implements TypeRegistry {
          */
         public Builder() {
             this.instance = new DataBind();
+            for (PrimitiveAdapter adapter : PrimitiveAdapter.values()) {
+                adapter.apply(this);
+            }
         }
 
         private Builder(DataBind instance) {
@@ -57,6 +62,34 @@ public class DataBind implements TypeRegistry {
             Type type = adapter.getRawType();
             putTypeFactory(type, adapter);
             putVisitType(type, adapter);
+            return this;
+        }
+
+        /**
+         * Set the int adapter implementation.
+         * 
+         * @param adapter the adapter to use.
+         * @throws NullPointerException if adapter is null.
+         */
+        @Override
+        public Builder put(IntFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.intFactory = adapter;
+            return this;
+        }
+
+        /**
+         * Set the long adapter implementation.
+         * 
+         * @param adapter the adapter to use.
+         * @throws NullPointerException if adapter is null.
+         */
+        @Override
+        public Builder put(LongFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.longFactory = adapter;
             return this;
         }
 
@@ -134,12 +167,6 @@ public class DataBind implements TypeRegistry {
     }
 
     private DataBind() {
-        for (PrimitiveAdapter primitiveAdapter : PrimitiveAdapter.values()) {
-            TypeAdapter<?> adapter = primitiveAdapter.getAdapter();
-            Type type = adapter.getRawType();
-            factories.put(type, adapter);
-            visits.put(type, adapter);
-        }
     }
 
     private DataBind(DataBind other) {
@@ -190,6 +217,22 @@ public class DataBind implements TypeRegistry {
      * {@inheritDoc}
      */
     @Override
+    public IntFactory getIntFactory() {
+        return intFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public LongFactory getLongFactory() {
+        return longFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public VisitType<?> getVisitType(final Type type) {
         VisitType<?> visit;
         lock.readLock().lock();
@@ -199,10 +242,10 @@ public class DataBind implements TypeRegistry {
             lock.readLock().unlock();
         }
         // Search with write lock:
-        if ( null == visit ) {
+        if (null == visit) {
             lock.writeLock().lock();
             try {
-                visit= visits.get(type);
+                visit = visits.get(type);
                 if (null == visit) {
                     Type actualType = extractActualType(type);
                     if (type != actualType) {
@@ -236,6 +279,9 @@ public class DataBind implements TypeRegistry {
             throw new UnsupportedTypeError("No registered VisitType for " + input.getClass());
         }
         TypeFactory<?> factory = getTypeFactory(targetType);
+        if (null == factory) {
+            throw new UnsupportedTypeError("No registered VisitType for " + targetType);
+        }
         Object[] result = new Object[1];
         VisitorBuilder<?> builder = new VisitorBuilder<>(factory, obj -> result[0] = obj, this);
         visit.visit(input, builder);

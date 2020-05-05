@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
+import java.util.Arrays;
 
 public class DataBindTest {
     public static class Person {
@@ -21,8 +22,7 @@ public class DataBindTest {
     @Tag("unit")
     @Test
     public void testBasic() throws IOException {
-        DataBind binder = new DataBind.Builder()
-        .put(new TypeAdapter<Person>() {
+        DataBind binder = new DataBind.Builder().put(new TypeAdapter<Person>() {
             @Override
             public Type getRawType() {
                 return Person.class;
@@ -40,7 +40,6 @@ public class DataBindTest {
 
                     @Override
                     public ObjectVisitor put(String key, Consumer<TypeVisitor> consumer) {
-                        System.err.println("put("+key+")");
                         switch (key) {
                             case "firstName":
                                 consumer.accept(ctx.createVisitor(String.class, str -> person.fname = str));
@@ -65,8 +64,7 @@ public class DataBindTest {
                         .put("lastName", v -> v.visit(person.lname)).put("birthday", v -> v.visit(person.birthday));
 
             }
-        })
-        .put(new TypeAdapter<Date>() {
+        }).put(new TypeAdapter<Date>() {
             @Override
             public Type getRawType() {
                 return Date.class;
@@ -91,5 +89,84 @@ public class DataBindTest {
         assertEquals(input.fname, output.fname);
         assertEquals(input.lname, output.lname);
         assertEquals(input.birthday, output.birthday);
+    }
+
+    @Tag("unit")
+    @Test
+    public void testPrimitives() throws IOException {
+        DataBind binder = new DataBind.Builder().put(new TypeAdapter<int[]>() {
+            @Override
+            public Type getRawType() {
+                return int[].class;
+            }
+
+            @Override
+            public ArrayVisitorBuilder<int[]> createArray(TypeBuilderContext ctx) {
+                return new ArrayVisitorBuilder<int[]>() {
+                    int[] output = new int[256];
+                    int length = 0;
+
+                    @Override
+                    public int[] build() {
+                        return Arrays.copyOf(output, length);
+                    }
+
+                    @Override
+                    public ArrayVisitor add(Consumer<TypeVisitor> consumer) {
+                        // FIXME: Ensure capacity...
+                        consumer.accept(ctx.createIntVisitor(num -> output[length++] = num));
+                        return this;
+                    }
+                };
+            }
+
+            @Override
+            public void visit(int[] value, TypeVisitor visitor) {
+                ArrayVisitor arrayVisitor = visitor.visitArray();
+                for ( int num : value) {
+                    arrayVisitor.add(v -> v.visit(num));
+                }
+            }
+        }).put(new TypeAdapter<long[]>() {
+            @Override
+            public Type getRawType() {
+                return long[].class;
+            }
+
+            @Override
+            public ArrayVisitorBuilder<long[]> createArray(TypeBuilderContext ctx) {
+                return new ArrayVisitorBuilder<long[]>() {
+                    long[] output = new long[256];
+                    int length = 0;
+
+                    @Override
+                    public long[] build() {
+                        return Arrays.copyOf(output, length);
+                    }
+
+                    @Override
+                    public ArrayVisitor add(Consumer<TypeVisitor> consumer) {
+                        // FIXME: Ensure capacity...
+                        consumer.accept(ctx.createLongVisitor(num -> output[length++] = num));
+                        return this;
+                    }
+                };
+            }
+
+            @Override
+            public void visit(long[] value, TypeVisitor visitor) {
+                ArrayVisitor arrayVisitor = visitor.visitArray();
+                for ( long num : value) {
+                    arrayVisitor.add(v -> v.visit(num));
+                }
+            }
+        })
+        .build();
+        int[] input = new int[]{0, 1, 2, 3, 4, 5, 6};
+        long[] output = binder.transform(input, long[].class);
+        assertEquals(input.length, output.length);
+        for ( int i=0; i < input.length; i++ ) {
+            assertEquals((long)input[i], output[i], "index="+i);
+        }
     }
 }

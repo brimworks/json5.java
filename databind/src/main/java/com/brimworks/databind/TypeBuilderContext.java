@@ -1,6 +1,8 @@
 package com.brimworks.databind;
 
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 import java.lang.reflect.Type;
 
 public interface TypeBuilderContext {
@@ -12,4 +14,8 @@ public interface TypeBuilderContext {
     }
 
     <T> TypeVisitor createVisitor(Type type, Consumer<T> save);
+
+    // Primitives:
+    TypeVisitor createIntVisitor(IntConsumer save);
+    TypeVisitor createLongVisitor(LongConsumer save);
 }

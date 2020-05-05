@@ -1,9 +1,10 @@
 package com.brimworks.databind;
 
 import java.lang.reflect.Type;
+import java.util.function.Consumer;
 
 public enum PrimitiveAdapter {
-    NULL(new TypeAdapter<Object>() {
+    NULL(builder -> builder.put(new TypeAdapter<Object>() {
         @Override
         public Type getRawType() {
             return null;
@@ -18,8 +19,8 @@ public enum PrimitiveAdapter {
         public void visit(Object val, TypeVisitor visitor) {
             visitor.visit(null);
         }
-    }),
-    STRING(new TypeAdapter<String>() {
+    })),
+    STRING(builder -> builder.put(new TypeAdapter<String>() {
         @Override
         public Type getRawType() {
             return String.class;
@@ -44,42 +45,46 @@ public enum PrimitiveAdapter {
         public void visit(String val, TypeVisitor visitor) {
             visitor.visit(val);
         }
-    }),
-    /*
-    INTEGER(new TypeAdapter<int>() {
-        @Override
-        public Type getRawType() {
-            return Integer.TYPE;
-        }
-
+    })),
+    INTEGER(builder -> builder.put(new IntFactory() {
         @Override
         public int create(String string, TypeBuilderContext ctx) {
-            return string;
+            return Integer.parseInt(string);
         }
 
         @Override
         public int create(Number value, TypeBuilderContext ctx) {
-            return value.toString();
+            return value.intValue();
         }
 
         @Override
         public int create(boolean value, TypeBuilderContext ctx) {
-            return Boolean.toString(value);
+            return value ? 1 : 0;
+        }
+    })),
+    LONG(builder -> builder.put(new LongFactory() {
+        @Override
+        public long create(String string, TypeBuilderContext ctx) {
+            return Long.parseLong(string);
         }
 
         @Override
-        public void visit(String val, TypeVisitor visitor) {
-            visitor.visit(val);
+        public long create(Number value, TypeBuilderContext ctx) {
+            return value.longValue();
         }
-    }),
-    */
+
+        @Override
+        public long create(boolean value, TypeBuilderContext ctx) {
+            return value ? 1L : 0L;
+        }
+    })),
     ;
 
-    private PrimitiveAdapter(TypeAdapter<?> adapter) {
-        this.adapter = adapter;
+    private PrimitiveAdapter(Consumer<TypeRegistry.Builder> consumer) {
+        this.consumer = consumer;
     }
-    private TypeAdapter<?> adapter;
-    public TypeAdapter<?> getAdapter() {
-        return adapter;
+    private Consumer<TypeRegistry.Builder> consumer;
+    public void apply(TypeRegistry.Builder builder) {
+        consumer.accept(builder);
     }
 }

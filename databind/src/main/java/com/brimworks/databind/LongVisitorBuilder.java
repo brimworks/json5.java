@@ -1,33 +1,27 @@
 package com.brimworks.databind;
 
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.function.Consumer;
+import java.util.List;
 import java.lang.reflect.Type;
 
-public class VisitorBuilder<T> implements TypeVisitor, TypeBuilderContext {
-    private TypeFactory<T> factory;
-    private ObjectVisitorBuilder<T> objectBuilder;
-    private ArrayVisitorBuilder<T> arrayBuilder;
+public class LongVisitorBuilder implements TypeVisitor, TypeBuilderContext {
+    private LongFactory factory;
     private TypeRegistry registry;
-    private Consumer<T> consumer;
-    public VisitorBuilder(TypeFactory<T> factory, Consumer<T> consumer, TypeRegistry registry) {
-        if ( null == factory ) throw new NullPointerException("expected non-null factory");
-        if ( null == consumer ) throw new NullPointerException("expected non-null consumer");
-        if ( null == registry ) throw new NullPointerException("expected non-null registry");
+    private LongConsumer consumer;
+    public LongVisitorBuilder(LongFactory factory, LongConsumer consumer, TypeRegistry registry) {
         this.factory = factory;
         this.consumer = consumer;
         this.registry = registry;
     }
     @Override
     public ObjectVisitor visitObject() {
-        objectBuilder = factory.createObject(this);
-        return objectBuilder;
+        throw unexpectedType(Object.class);
     }
     @Override
     public ArrayVisitor visitArray() {
-        arrayBuilder = factory.createArray(this);
-        return arrayBuilder;
+        throw unexpectedType(List.class);
     }
     @Override
     public void visit(Object val) {
@@ -39,49 +33,49 @@ public class VisitorBuilder<T> implements TypeVisitor, TypeBuilderContext {
             consumer.accept(factory.createNull(this));
         } else { // Must adapt:
             VisitType visit = registry.getVisitType(val.getClass());
-            VisitorBuilder<T> builder = new VisitorBuilder<>(factory, consumer, registry);
+            LongVisitorBuilder builder = new LongVisitorBuilder(factory, consumer, registry);
             visit.visit(val, builder);
-            builder.visitFinish();
         }
     }
+
     @Override
     public void visit(boolean val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(long val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(int val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(short val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(char val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(byte val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(double val) {
         consumer.accept(factory.create(val, this));
     }
+
     @Override
     public void visit(float val) {
         consumer.accept(factory.create(val, this));
-    }
-    public void visitFinish() {
-        if ( null != objectBuilder ) {
-            consumer.accept(objectBuilder.build());
-        } else if ( null != arrayBuilder ) {
-            consumer.accept(arrayBuilder.build());
-        }
     }
 
     @Override
@@ -97,7 +91,6 @@ public class VisitorBuilder<T> implements TypeVisitor, TypeBuilderContext {
 
     @Override
     public <U> TypeVisitor createVisitor(Type type, Consumer<U> save) {
-        // FIXME: Build lineage so we get better error tracing.
         TypeFactory<U> factory = (TypeFactory<U>)registry.getTypeFactory(type);
         if ( null == factory ) {
             throw new UnsupportedTypeError("No factory for "+type);
@@ -107,7 +100,6 @@ public class VisitorBuilder<T> implements TypeVisitor, TypeBuilderContext {
 
     @Override
     public TypeVisitor createIntVisitor(IntConsumer save) {
-        // FIXME: Build lineage so we get better error tracing.
         IntFactory factory = registry.getIntFactory();
         if ( null == factory ) {
             throw new UnsupportedTypeError("No factory for int");

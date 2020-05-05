@@ -7,4 +7,6 @@ public interface TypeFactoryRegistry {
         return (TypeFactory<T>)getTypeFactory((Type)type);
     }
     TypeFactory<?> getTypeFactory(Type type);
+    IntFactory getIntFactory();
+    LongFactory getLongFactory();
 }
