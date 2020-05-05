@@ -75,3 +75,11 @@ parser.parse(Paths.get("example.json5"));
 Object value = stack.remove(0);
 
 ```
+
+# Databind (coming soon)
+
+I'm currently working on a "universal databind" core model that can be used to convert between types, perform a deep copy of a type, and/or serialize/deserialize a type.
+
+Once I have the core working models, I plan to create adapters to serialize/deserialize with the json5 library above.
+
+Longer term, having adapters for the "gson" and "jackson" serialize/deserialize ecosystem are possibilities. Feel free to file an "issue" if you are interested in helping out.
