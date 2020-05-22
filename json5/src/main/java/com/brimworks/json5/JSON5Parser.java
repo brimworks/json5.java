@@ -60,7 +60,7 @@ public class JSON5Parser {
         } else if (path.getLast().isArray()) {
             visitor.endArrayValue(line, offset);
         } else {
-            visitor.endObjectPair(line, offset);
+            visitor.endObjectPair(path.getLast().asKey(), line, offset);
         }
     }
 
@@ -101,9 +101,12 @@ public class JSON5Parser {
             transitionState(State.STRING_VALUE, line, offset);
             lastString = val;
             if (null != visitor) {
-                visitor.visit(val, line, offset);
-                if (!isObjectKey)
+                if(!isObjectKey) {
+                    visitor.visit(val, line, offset);
                     visitValue(line, offset);
+                } else {
+                    visitor.visitKey(val, line, offset);
+                }
             }
         }
 

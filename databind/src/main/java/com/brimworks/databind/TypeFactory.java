@@ -6,19 +6,19 @@ import java.lang.reflect.Type;
 public interface TypeFactory<T> {
     Type getRawType();
     default ArrayVisitorBuilder<T> createArray(TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(List.class);
+        throw ctx.unexpectedType(List.class, getRawType());
     }
     default ObjectVisitorBuilder<T> createObject(TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Object.class);
+        throw ctx.unexpectedType(Object.class, getRawType());
     }
     default T create(Number value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Number.class);
+        throw ctx.unexpectedType(Number.class, getRawType());
     }
     default T create(String value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(String.class);
+        throw ctx.unexpectedType(String.class, getRawType());
     }
     default T create(boolean value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Boolean.class);
+        throw ctx.unexpectedType(Boolean.class, getRawType());
     }
 
     default T createNull(TypeBuilderContext ctx) {

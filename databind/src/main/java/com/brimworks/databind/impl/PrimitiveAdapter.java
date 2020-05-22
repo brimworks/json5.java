@@ -1,7 +1,19 @@
-package com.brimworks.databind;
+package com.brimworks.databind.impl;
 
 import java.lang.reflect.Type;
+import java.lang.reflect.GenericArrayType;
 import java.util.function.Consumer;
+
+import com.brimworks.databind.TypeFactory;
+import com.brimworks.databind.TypeFactoryRegistry;
+import com.brimworks.databind.VisitType;
+import com.brimworks.databind.IntFactory;
+import com.brimworks.databind.LongFactory;
+import com.brimworks.databind.TypeAdapter;
+import com.brimworks.databind.TypeAdapterRegistry;
+import com.brimworks.databind.TypeBuilderContext;
+import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitor;
 
 public enum PrimitiveAdapter {
     NULL(builder -> builder.put(new TypeAdapter<Object>() {
@@ -19,8 +31,7 @@ public enum PrimitiveAdapter {
         public void visit(Object val, TypeVisitor visitor) {
             visitor.visit(null);
         }
-    })),
-    STRING(builder -> builder.put(new TypeAdapter<String>() {
+    })), STRING(builder -> builder.put(new TypeAdapter<String>() {
         @Override
         public Type getRawType() {
             return String.class;
@@ -45,8 +56,7 @@ public enum PrimitiveAdapter {
         public void visit(String val, TypeVisitor visitor) {
             visitor.visit(val);
         }
-    })),
-    INTEGER(builder -> builder.put(new IntFactory() {
+    })), INTEGER(builder -> builder.put(new IntFactory() {
         @Override
         public int create(String string, TypeBuilderContext ctx) {
             return Integer.parseInt(string);
@@ -61,8 +71,7 @@ public enum PrimitiveAdapter {
         public int create(boolean value, TypeBuilderContext ctx) {
             return value ? 1 : 0;
         }
-    })),
-    LONG(builder -> builder.put(new LongFactory() {
+    })), LONG(builder -> builder.put(new LongFactory() {
         @Override
         public long create(String string, TypeBuilderContext ctx) {
             return Long.parseLong(string);
@@ -77,13 +86,17 @@ public enum PrimitiveAdapter {
         public long create(boolean value, TypeBuilderContext ctx) {
             return value ? 1L : 0L;
         }
-    })),
+    })), ARRAY(builder -> builder.add(new ArrayTypeFactoryRegistry())),
+    
+    
     ;
 
     private PrimitiveAdapter(Consumer<TypeRegistry.Builder> consumer) {
         this.consumer = consumer;
     }
+
     private Consumer<TypeRegistry.Builder> consumer;
+
     public void apply(TypeRegistry.Builder builder) {
         consumer.accept(builder);
     }

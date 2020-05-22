@@ -7,6 +7,7 @@ import java.lang.reflect.Type;
 
 public interface TypeBuilderContext {
     UnsupportedTypeError unexpectedType(Type type);
+    UnsupportedTypeError unexpectedType(Type type, Type src);
     UnsupportedTypeError unexpectedKey(String key);
     
     default <T> TypeVisitor createVisitor(Class<T> type, Consumer<T> save) {

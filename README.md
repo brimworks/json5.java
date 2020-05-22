@@ -50,9 +50,8 @@ parser.setVisitor(
         }
 
         @Override
-        public void endObjectPair(int line, long offset) {
+        public void endObjectPair(String key, int line, long offset) {
             Object val = stack.remove(stack.size()-1);
-            String key = (String)stack.remove(stack.size()-1);
             ((Map)stack.get(stack.size()-1)).put(key, val);
         }
 

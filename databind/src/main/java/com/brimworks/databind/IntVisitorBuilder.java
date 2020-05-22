@@ -84,6 +84,11 @@ public class IntVisitorBuilder implements TypeVisitor, TypeBuilderContext {
         return new UnsupportedTypeError("Unexpected type: "+type);
     }
     @Override
+    public UnsupportedTypeError unexpectedType(Type type, Type src) {
+        // FIXME: Improved error handling...
+        return new UnsupportedTypeError("Unexpected type: "+type+" when trying to build "+src);
+    }
+    @Override
     public UnsupportedTypeError unexpectedKey(String key) {
         // FIXME: Improved error handling...
         return new UnsupportedTypeError("Unexpected key: "+key);

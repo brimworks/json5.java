@@ -5,5 +5,6 @@ public interface TypeRegistry extends TypeFactoryRegistry, VisitTypeRegistry {
         Builder put(IntFactory adapter);
         Builder put(LongFactory adapter);
         <T> Builder put(TypeAdapter<T> adapter);
+        Builder add(TypeAdapterRegistry registry);
     }
 }

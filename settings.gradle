@@ -10,3 +10,4 @@
 rootProject.name = 'brimworks.java'
 include 'json5'
 include 'databind'
+include 'json5-databind'

@@ -108,13 +108,25 @@ public interface JSON5Visitor {
     }
 
     /**
-     * Called when the end of an object "key": VALUE pair has been observed, current
-     * location will indicate the location of VALUE.
+     * Called when an object "key" has been observed, current location will indicate
+     * the location of "key". Note that `visitString()` is NOT called.
      * 
+     * @param key    the key of the object
      * @param line   source-input line of token
      * @param offset source-input byte offset from beginning of stream
      */
-    default void endObjectPair(int line, long offset) {
+    default void visitKey(String key, int line, long offset) {
+    }
+
+    /**
+     * Called when an object "key": VALUE has been observed, current location will indicate
+     * the location of VALUE.
+     * 
+     * @param key    the key of the object
+     * @param line   source-input line of token
+     * @param offset source-input byte offset from beginning of stream
+     */
+    default void endObjectPair(String key, int line, long offset) {
     }
 
     /**

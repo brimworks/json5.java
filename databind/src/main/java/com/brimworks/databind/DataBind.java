@@ -5,8 +5,10 @@ import java.util.HashMap;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import com.brimworks.databind.impl.PrimitiveAdapter;
 
 /**
  * DataBind instances must be created with a {@link DataBind.Builder}. The
@@ -17,9 +19,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class DataBind implements TypeRegistry {
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private Map<Type, TypeFactory<?>> factories = new HashMap<>();
-    private List<TypeFactoryRegistry> factoryRegistries = new ArrayList<>();
+    private ArrayList<TypeFactoryRegistry> factoryRegistries = new ArrayList<>();
     private Map<Type, VisitType<?>> visits = new HashMap<>();
-    private List<VisitTypeRegistry> visitRegistries = new ArrayList<>();
+    private ArrayList<VisitTypeRegistry> visitRegistries = new ArrayList<>();
     private IntFactory intFactory = null;
     private LongFactory longFactory = null;
 
@@ -119,6 +121,20 @@ public class DataBind implements TypeRegistry {
             if (null == visitType)
                 throw new NullPointerException("Expected non-null visitType");
             instance.visits.put(type, visitType);
+            return this;
+        }
+
+        /**
+         * Append to the list of delegate type adapters.
+         * 
+         * @param registry the registry to add to the list of registries to use.
+         * @return this
+         */
+        public Builder add(TypeAdapterRegistry registry) {
+            if (null == registry)
+                throw new NullPointerException("registry must be non-null");
+            addTypeFactoryRegistry(registry);
+            addVisitTypeRegistry(registry);
             return this;
         }
 
@@ -290,7 +306,9 @@ public class DataBind implements TypeRegistry {
     }
 
     private TypeFactory<?> findTypeFactory(final Type type) {
-        for (TypeFactoryRegistry registry : factoryRegistries) {
+        ListIterator<TypeFactoryRegistry> it = factoryRegistries.listIterator(factoryRegistries.size());
+        while (it.hasPrevious()) {
+            TypeFactoryRegistry registry = it.previous();
             TypeFactory<?> factory = registry.getTypeFactory(type);
             if (null != factory) {
                 return factory;
@@ -300,7 +318,9 @@ public class DataBind implements TypeRegistry {
     }
 
     private VisitType<?> findVisitType(final Type type) {
-        for (VisitTypeRegistry registry : visitRegistries) {
+        ListIterator<VisitTypeRegistry> it = visitRegistries.listIterator(visitRegistries.size());
+        while (it.hasPrevious()) {
+            VisitTypeRegistry registry = it.previous();
             VisitType<?> visit = registry.getVisitType(type);
             if (null != visit) {
                 return visit;

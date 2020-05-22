@@ -6,7 +6,13 @@ public interface TypeFactoryRegistry {
     default <T> TypeFactory<T> getTypeFactory(Class<T> type) {
         return (TypeFactory<T>)getTypeFactory((Type)type);
     }
-    TypeFactory<?> getTypeFactory(Type type);
-    IntFactory getIntFactory();
-    LongFactory getLongFactory();
+    default TypeFactory<?> getTypeFactory(Type type) {
+        return null;
+    }
+    default IntFactory getIntFactory() {
+        return null;
+    }
+    default LongFactory getLongFactory() {
+        return null;
+    }
 }
