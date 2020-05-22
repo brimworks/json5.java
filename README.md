@@ -1,4 +1,4 @@
-Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/json5.java/json5.java/images/download.svg?version=latest) ](https://bintray.com/brimworks/json5.java/json5.java/0.0.3/link)
+Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/json5.java/json5.java/images/download.svg?version=latest) ](https://bintray.com/brimworks/json5.java/json5.java/1.0.0/link)
 
 Build Health: [![](https://jitci.com/gh/brimworks/json5.java/svg)](https://jitci.com/gh/brimworks/json5.java)
 
@@ -82,3 +82,14 @@ I'm currently working on a "universal databind" core model that can be used to c
 Once I have the core working models, I plan to create adapters to serialize/deserialize with the json5 library above.
 
 Longer term, having adapters for the "gson" and "jackson" serialize/deserialize ecosystem are possibilities. Feel free to file an "issue" if you are interested in helping out.
+
+# Release Notes
+
+## Version 1.0.0
+
+This was a major version bump since there was several backwards incompatible changes made. Specifically:
+
+- JSON5Visitor endObjectPair() is now passed in the key of the object pair, and added a visitKey() method which is called INSTEAD of visit(String). This should make it easier to implement custom visitors, sorry if this change broke your code, but it is the right thing to do in the long term.
+- Remove the Consumer wrapping of visitors. Specifically, ArrayVisitor.add() and ObjectVisitor.put(String) now return a TypeVisitor rather than taking a Consumer<TypeVisitor> as input.
+- Added some methods to various interfaces: TypeBuilderContext and TypeRegistry. This is part of the databind code which is still early "alpha" code, so expect more changes here in the future.
+- Added a new json5-databind module. This will eventually make it easier to use JSON5 from arbitrary types, but this is still a work in progress.
