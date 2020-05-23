@@ -2,17 +2,16 @@ package com.brimworks.databind;
 
 public interface IntFactory {
     default int create(Number value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Number.class);
+        throw ctx.unsupportedType("Unexpected number");
     }
     default int create(String value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(String.class);
+        throw ctx.unsupportedType("Unexpected string");
     }
     default int create(boolean value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Boolean.class);
+        throw ctx.unsupportedType("Unexpected boolean");
     }
-
     default int createNull(TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(null);
+        throw ctx.unsupportedType("Unexpected null");
     }
 
     // PRIMITIVES, default to delegation.
@@ -37,4 +36,6 @@ public interface IntFactory {
     default int create(float value, TypeBuilderContext ctx) {
         return create(Float.valueOf(value), ctx);
     }
+
+
 }

@@ -1,24 +1,20 @@
 package com.brimworks.databind;
 
-import java.util.List;
-import java.lang.reflect.Type;
-
 public interface TypeFactory<T> {
-    Type getRawType();
-    default ArrayVisitorBuilder<T> createArray(TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(List.class, getRawType());
+    default ArrayBuilder<T> createArray(int size, TypeBuilderContext ctx) {
+        throw ctx.unsupportedType("Unexpected array");
     }
-    default ObjectVisitorBuilder<T> createObject(TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Object.class, getRawType());
+    default ObjectBuilder<T> createObject(int size, TypeBuilderContext ctx) {
+        throw ctx.unsupportedType("Unexpected object");
     }
     default T create(Number value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Number.class, getRawType());
+        throw ctx.unsupportedType("Unexpected number");
     }
     default T create(String value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(String.class, getRawType());
+        throw ctx.unsupportedType("Unexpected string");
     }
     default T create(boolean value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Boolean.class, getRawType());
+        throw ctx.unsupportedType("Unexpected boolean");
     }
 
     default T createNull(TypeBuilderContext ctx) {

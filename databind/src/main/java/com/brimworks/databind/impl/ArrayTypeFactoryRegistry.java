@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.brimworks.databind.ArrayVisitor;
-import com.brimworks.databind.ArrayVisitorBuilder;
+import com.brimworks.databind.ArrayBuilder;
 import com.brimworks.databind.TypeAdapterRegistry;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeFactory;
@@ -14,15 +14,13 @@ import com.brimworks.databind.TypeVisitor;
 import com.brimworks.databind.VisitType;
 
 public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
-    private static final int DEFAULT_ALLOC = 100;
-
-    private static abstract class ArrayVisitorBuilderImpl implements ArrayVisitorBuilder<Object> {
+    private static abstract class ArrayBuilderImpl implements ArrayBuilder<Object> {
         private int alloc;
         private Class<?> elmType;
         private int size;
         protected Object array;
 
-        ArrayVisitorBuilderImpl(Class<?> elmType, int alloc) {
+        ArrayBuilderImpl(Class<?> elmType, int alloc) {
             this.elmType = elmType;
             this.alloc = alloc;
             array = Array.newInstance(elmType, alloc);
@@ -49,7 +47,7 @@ public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
         }
 
         @Override
-        abstract public TypeVisitor add();
+        abstract public TypeVisitor add(TypeBuilderContext ctx);
     }
 
     private Map<Class<?>, TypeFactory<?>> PRIMATIVE_TYPE_FACTORY = new HashMap<>();
@@ -57,15 +55,10 @@ public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
         {
             PRIMATIVE_TYPE_FACTORY.put(Integer.TYPE, new TypeFactory<Object>() {
                 @Override
-                public Type getRawType() {
-                    return int[].class;
-                }
-
-                @Override
-                public ArrayVisitorBuilder<Object> createArray(TypeBuilderContext ctx) {
-                    return new ArrayVisitorBuilderImpl(Integer.TYPE, DEFAULT_ALLOC) {
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Integer.TYPE, size) {
                         @Override
-                        public TypeVisitor add() {
+                        public TypeVisitor add(TypeBuilderContext ctx) {
                             return ctx.createIntVisitor(elm -> Array.setInt(array, alloc(), elm));
                         }
                     };
@@ -73,15 +66,10 @@ public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
             });
             PRIMATIVE_TYPE_FACTORY.put(Long.TYPE, new TypeFactory<Object>() {
                 @Override
-                public Type getRawType() {
-                    return long[].class;
-                }
-
-                @Override
-                public ArrayVisitorBuilder<Object> createArray(TypeBuilderContext ctx) {
-                    return new ArrayVisitorBuilderImpl(Long.TYPE, DEFAULT_ALLOC) {
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Long.TYPE, size) {
                         @Override
-                        public TypeVisitor add() {
+                        public TypeVisitor add(TypeBuilderContext ctx) {
                             return ctx.createLongVisitor(elm -> Array.setLong(array, alloc(), elm));
                         }
                     };
@@ -95,11 +83,12 @@ public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
             PRIMATIVE_VISIT_TYPE.put(Integer.TYPE, new VisitType<Object>() {
                 @Override
                 public void visit(Object array, TypeVisitor visitor) {
-                    ArrayVisitor arrayVisitor = visitor.visitArray();
                     int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
                     for (int i = 0; i < len; i++) {
                         arrayVisitor.add().visit(Array.getInt(array, i));
                     }
+                    arrayVisitor.done();
                 }
             });
         }
@@ -117,15 +106,10 @@ public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
 
         return new TypeFactory<Object>() {
             @Override
-            public Type getRawType() {
-                return type;
-            }
-
-            @Override
-            public ArrayVisitorBuilder<Object> createArray(TypeBuilderContext ctx) {
-                return new ArrayVisitorBuilderImpl(elmType, DEFAULT_ALLOC) {
+            public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx) {
+                return new ArrayBuilderImpl(elmType, size) {
                     @Override
-                    public TypeVisitor add() {
+                    public TypeVisitor add(TypeBuilderContext ctx) {
                         return ctx.createVisitor(elmType, elm -> Array.set(array, alloc(), elm));
                     }
                 };
@@ -146,11 +130,12 @@ public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
         return new VisitType<Object>() {
             @Override
             public void visit(Object array, TypeVisitor visitor) {
-                ArrayVisitor arrayVisitor = visitor.visitArray();
                 int len = Array.getLength(array);
+                ArrayVisitor arrayVisitor = visitor.visitArray(len);
                 for (int i = 0; i < len; i++) {
                     arrayVisitor.add().visit(Array.get(array, i));
                 }
+                arrayVisitor.done();
             }
         };
     }

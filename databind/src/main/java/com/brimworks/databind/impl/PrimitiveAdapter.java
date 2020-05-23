@@ -68,6 +68,49 @@ public enum PrimitiveAdapter {
         }
 
         @Override
+        public int create(long value, TypeBuilderContext ctx) {
+            try {
+                return Math.toIntExact(value);
+            } catch ( ArithmeticException ex ) {
+                throw ctx.unsupportedType(ex);
+            }
+        }
+
+        @Override
+        public int create(int value, TypeBuilderContext ctx) {
+            return value;
+        }
+
+        @Override
+        public int create(short value, TypeBuilderContext ctx) {
+            return value;
+        }
+
+        @Override
+        public int create(char value, TypeBuilderContext ctx) {
+            return value;
+        }
+
+        @Override
+        public int create(byte value, TypeBuilderContext ctx) {
+            return value;
+        }
+
+        @Override
+        public int create(double value, TypeBuilderContext ctx) {
+            try {
+                return Math.toIntExact(Math.round(value));
+            } catch ( ArithmeticException ex ) {
+                throw ctx.unsupportedType(ex);
+            }
+        }
+
+        @Override
+        public int create(float value, TypeBuilderContext ctx) {
+            return Math.round(value);
+        }
+
+        @Override
         public int create(boolean value, TypeBuilderContext ctx) {
             return value ? 1 : 0;
         }

@@ -14,12 +14,11 @@ import java.util.Arrays;
 import com.brimworks.databind.DataBind;
 import com.brimworks.databind.TypeAdapter;
 import com.brimworks.databind.TypeBuilderContext;
-import com.brimworks.databind.ObjectVisitorBuilder;
+import com.brimworks.databind.ObjectBuilder;
 import com.brimworks.databind.ObjectVisitor;
-import com.brimworks.databind.ArrayVisitorBuilder;
+import com.brimworks.databind.ArrayBuilder;
 import com.brimworks.databind.ArrayVisitor;
 import com.brimworks.databind.TypeVisitor;
-import java.util.function.Consumer;
 import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
@@ -159,8 +158,8 @@ public class JSON5DataBindTest {
             }
 
             @Override
-            public ObjectVisitorBuilder<Person> createObject(TypeBuilderContext ctx) {
-                return new ObjectVisitorBuilder<Person>() {
+            public ObjectBuilder<Person> createObject(int size, TypeBuilderContext ctx1) {
+                return new ObjectBuilder<Person>() {
                     Person person = new Person();
 
                     @Override
@@ -169,7 +168,7 @@ public class JSON5DataBindTest {
                     }
 
                     @Override
-                    public TypeVisitor put(String key) {
+                    public TypeVisitor put(String key, TypeBuilderContext ctx) {
                         switch (key) {
                             case "firstName":
                                 return ctx.createVisitor(String.class, str -> person.fname = str);
@@ -184,9 +183,10 @@ public class JSON5DataBindTest {
 
             @Override
             public void visit(Person person, TypeVisitor visitor) {
-                ObjectVisitor objectVisitor = visitor.visitObject();
+                ObjectVisitor objectVisitor = visitor.visitObject(2);
                 objectVisitor.put("firstName").visit(person.fname);
                 objectVisitor.put("lastName").visit(person.lname);
+                objectVisitor.done();
             }
         }).build();
 
@@ -209,8 +209,8 @@ public class JSON5DataBindTest {
             }
 
             @Override
-            public ObjectVisitorBuilder<Users> createObject(TypeBuilderContext ctx) {
-                return new ObjectVisitorBuilder<Users>() {
+            public ObjectBuilder<Users> createObject(int size, TypeBuilderContext ctx1) {
+                return new ObjectBuilder<Users>() {
                     Users users = new Users();
 
                     @Override
@@ -219,7 +219,7 @@ public class JSON5DataBindTest {
                     }
 
                     @Override
-                    public TypeVisitor put(String key) {
+                    public TypeVisitor put(String key, TypeBuilderContext ctx) {
                         switch (key) {
                             case "users":
                                 return ctx.createVisitor(new TypeToken<List<Users.User>>() {
@@ -233,7 +233,9 @@ public class JSON5DataBindTest {
 
             @Override
             public void visit(Users users, TypeVisitor visitor) {
-                visitor.visitObject().put("users").visit(users.users);
+                ObjectVisitor objectVisitor = visitor.visitObject(1);
+                objectVisitor.put("users").visit(users.users);
+                objectVisitor.done();
             }
         }).put(new TypeAdapter<List<Users.User>>() {
             @Override
@@ -243,10 +245,9 @@ public class JSON5DataBindTest {
             }
 
             @Override
-            public ArrayVisitorBuilder<List<Users.User>> createArray(TypeBuilderContext ctx) {
-                return new ArrayVisitorBuilder<List<Users.User>>() {
+            public ArrayBuilder<List<Users.User>> createArray(int size, TypeBuilderContext ctx1) {
+                return new ArrayBuilder<List<Users.User>>() {
                     List<Users.User> users = new ArrayList<>();
-                    TypeVisitor elmVisitor = ctx.createVisitor(Users.User.class, user -> users.add(user));
 
                     @Override
                     public List<Users.User> build() {
@@ -254,18 +255,19 @@ public class JSON5DataBindTest {
                     }
 
                     @Override
-                    public TypeVisitor add() {
-                        return elmVisitor;
+                    public TypeVisitor add(TypeBuilderContext ctx) {
+                        return ctx.createVisitor(Users.User.class, user -> users.add(user));
                     }
                 };
             }
 
             @Override
             public void visit(List<Users.User> users, TypeVisitor visitor) {
-                ArrayVisitor dst = visitor.visitArray();
+                ArrayVisitor dst = visitor.visitArray(users.size());
                 for (Users.User user : users) {
                     dst.add().visit(user);
                 }
+                dst.done();
             }
         }).put(new TypeAdapter<Users.User>() {
             @Override
@@ -274,8 +276,8 @@ public class JSON5DataBindTest {
             }
 
             @Override
-            public ObjectVisitorBuilder<Users.User> createObject(TypeBuilderContext ctx) {
-                return new ObjectVisitorBuilder<Users.User>() {
+            public ObjectBuilder<Users.User> createObject(int size, TypeBuilderContext ctx1) {
+                return new ObjectBuilder<Users.User>() {
                     Users.User user = new Users.User();
 
                     @Override
@@ -284,7 +286,7 @@ public class JSON5DataBindTest {
                     }
 
                     @Override
-                    public TypeVisitor put(String key) {
+                    public TypeVisitor put(String key, TypeBuilderContext ctx) {
                         switch (key) {
                             case "_id":
                                 return ctx.createVisitor(String.class, str -> user._id = str);
@@ -302,5 +304,12 @@ public class JSON5DataBindTest {
             }
         }).build());
         Users users = json5.parse("{\"users\":[{\"_id\":\"Jim\",\"name\":\"Bean\"}]}", SOURCE, Users.class);
+        Users expect = new Users();
+        expect.users = new ArrayList<>();
+        Users.User jim = new Users.User();
+        jim._id = "Jim";
+        jim.name = "Bean";
+        expect.users.add(jim);
+        assertEquals(expect.users, users.users);
     }
 }

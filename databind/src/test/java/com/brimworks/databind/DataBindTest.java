@@ -18,6 +18,7 @@ public class DataBindTest {
         public String lname;
         public Date birthday;
         public int carCount;
+        public Person spouse;
     }
 
     @Tag("unit")
@@ -30,8 +31,8 @@ public class DataBindTest {
             }
 
             @Override
-            public ObjectVisitorBuilder<Person> createObject(TypeBuilderContext ctx) {
-                return new ObjectVisitorBuilder<Person>() {
+            public ObjectBuilder<Person> createObject(int size, TypeBuilderContext ctx1) {
+                return new ObjectBuilder<Person>() {
                     Person person = new Person();
 
                     @Override
@@ -40,7 +41,7 @@ public class DataBindTest {
                     }
 
                     @Override
-                    public TypeVisitor put(String key) {
+                    public TypeVisitor put(String key, TypeBuilderContext ctx) {
                         switch (key) {
                             case "firstName":
                                 return ctx.createVisitor(String.class, str -> person.fname = str);
@@ -50,6 +51,8 @@ public class DataBindTest {
                                 return ctx.createVisitor(Date.class, date -> person.birthday = date);
                             case "carCount":
                                 return ctx.createIntVisitor(count -> person.carCount = count);
+                            case "spouse":
+                                return ctx.createVisitor(Person.class, spouse -> person.spouse = spouse);
                             default:
                                 throw ctx.unexpectedKey(key);
                         }
@@ -59,11 +62,13 @@ public class DataBindTest {
 
             @Override
             public void visit(Person person, TypeVisitor visitor) {
-                ObjectVisitor objectVisitor = visitor.visitObject();
+                ObjectVisitor objectVisitor = visitor.visitObject(4);
                 objectVisitor.put("firstName").visit(person.fname);
                 objectVisitor.put("lastName").visit(person.lname);
                 objectVisitor.put("birthday").visit(person.birthday);
                 objectVisitor.put("carCount").visit(person.carCount);
+                objectVisitor.put("spouse").visit(person.spouse);
+                objectVisitor.done();
             }
         }).put(new TypeAdapter<Date>() {
             @Override
@@ -86,12 +91,17 @@ public class DataBindTest {
         input.lname = "Smith";
         input.birthday = new Date(1588547922000L);
         input.carCount = 5;
+        input.spouse = new Person();
+        input.spouse.fname = "Alissa";
+        input.spouse.lname = "Smith";
         Person output = binder.transform(input, Person.class);
         assertTrue(output != input, "Transform should create a new Person");
         assertEquals(input.fname, output.fname);
         assertEquals(input.lname, output.lname);
         assertEquals(input.birthday, output.birthday);
         assertEquals(input.carCount, output.carCount);
+        assertEquals(input.spouse.fname, output.spouse.fname);
+        assertEquals(input.spouse.lname, output.spouse.lname);
     }
 
     @Tag("unit")
@@ -104,30 +114,30 @@ public class DataBindTest {
             }
 
             @Override
-            public ArrayVisitorBuilder<int[]> createArray(TypeBuilderContext ctx) {
-                return new ArrayVisitorBuilder<int[]>() {
-                    int[] output = new int[256];
+            public ArrayBuilder<int[]> createArray(int size, TypeBuilderContext ctx1) {
+                return new ArrayBuilder<int[]>() {
+                    int[] output = new int[size];
                     int length = 0;
-                    TypeVisitor elmVisitor = ctx.createIntVisitor(num -> output[length++] = num);
 
                     @Override
                     public int[] build() {
-                        return Arrays.copyOf(output, length);
+                        return output;
                     }
 
                     @Override
-                    public TypeVisitor add() {
-                        return elmVisitor;
+                    public TypeVisitor add(TypeBuilderContext ctx) {
+                        return ctx.createIntVisitor(num -> output[length++] = num);
                     }
                 };
             }
 
             @Override
             public void visit(int[] value, TypeVisitor visitor) {
-                ArrayVisitor arrayVisitor = visitor.visitArray();
+                ArrayVisitor arrayVisitor = visitor.visitArray(value.length);
                 for (int num : value) {
                     arrayVisitor.add().visit(num);
                 }
+                arrayVisitor.done();
             }
         }).build();
         int[] ints = new int[] { 0, 1, 2, 3, 4, 5, 6 };

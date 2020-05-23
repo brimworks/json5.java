@@ -10,4 +10,5 @@ public interface ArrayVisitor {
      * @return a TypeVisitor to use on for the next array element encountered.
      */
     TypeVisitor add();
+    void done();
 }

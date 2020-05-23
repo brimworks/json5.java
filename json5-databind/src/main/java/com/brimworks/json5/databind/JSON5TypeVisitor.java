@@ -1,8 +1,7 @@
 package com.brimworks.json5.databind;
 
 import com.brimworks.databind.TypeRegistry;
-import com.brimworks.databind.VisitorBuilder;
-import com.brimworks.databind.TypeFactory;
+import com.brimworks.databind.impl.TypeVisitorImpl;
 import com.brimworks.databind.TypeVisitor;
 import com.brimworks.databind.UnsupportedTypeError;
 import com.brimworks.json5.JSON5Visitor;
@@ -13,7 +12,6 @@ import java.math.BigDecimal;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.function.Supplier;
 
 
 public class JSON5TypeVisitor implements JSON5Visitor {
@@ -35,11 +33,7 @@ public class JSON5TypeVisitor implements JSON5Visitor {
     private Object result;
 
     public JSON5TypeVisitor(TypeRegistry typeRegistry, Type type) throws UnsupportedTypeError {
-        TypeFactory<?> factory = typeRegistry.getTypeFactory(type);
-        if (null == factory) {
-            throw new UnsupportedTypeError("No registered VisitType for " + type);
-        }
-        stack.add(new Frame(new VisitorBuilder(factory, obj -> result = obj, typeRegistry)));
+        stack.add(new Frame(new TypeVisitorImpl<>(typeRegistry, type, obj -> result = obj)));
     }
 
     private TypeVisitor get() {
@@ -92,7 +86,7 @@ public class JSON5TypeVisitor implements JSON5Visitor {
 
     @Override
     public void startObject(int line, long offset) {
-        stack.add(new Frame(get().visitObject()));
+        stack.add(new Frame(get().visitObject(100)));
     }
 
     @Override
@@ -103,26 +97,24 @@ public class JSON5TypeVisitor implements JSON5Visitor {
 
     @Override
     public void endObject(int line, long offset) {
-        stack.remove(stack.size()-1);
+        stack.remove(stack.size()-1).objectVisitor.done();
     }
 
     @Override
     public void startArray(int line, long offset) {
-        stack.add(new Frame(get().visitArray()));
+        stack.add(new Frame(get().visitArray(100)));
     }
 
     @Override
     public void endArray(int line, long offset) {
-        stack.remove(stack.size()-1);
+        stack.remove(stack.size()-1).arrayVisitor.done();
     }
 
     public Object pop() {
         if ( stack.size() != 1 ) {
             throw new IllegalStateException("Expected stack to have exactly 1 element, got "+stack.size());
         }
-        Frame frame = stack.remove(0);
-        VisitorBuilder visitorBuilder = (VisitorBuilder)frame.visitor;
-        visitorBuilder.visitFinish();
+        stack.remove(0);
         return result;
     }
 }

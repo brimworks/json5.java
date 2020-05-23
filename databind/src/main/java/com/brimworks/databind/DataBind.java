@@ -9,6 +9,7 @@ import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import com.brimworks.databind.impl.PrimitiveAdapter;
+import com.brimworks.databind.impl.TypeVisitorImpl;
 
 /**
  * DataBind instances must be created with a {@link DataBind.Builder}. The
@@ -299,9 +300,8 @@ public class DataBind implements TypeRegistry {
             throw new UnsupportedTypeError("No registered VisitType for " + targetType);
         }
         Object[] result = new Object[1];
-        VisitorBuilder<?> builder = new VisitorBuilder<>(factory, obj -> result[0] = obj, this);
+        TypeVisitorImpl<?> builder = new TypeVisitorImpl<>(this, targetType, obj -> result[0] = obj);
         visit.visit(input, builder);
-        builder.visitFinish();
         return result[0];
     }
 

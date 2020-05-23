@@ -9,4 +9,7 @@ public class UnsupportedTypeError extends RuntimeException {
     public UnsupportedTypeError(String msg) {
         super(msg);
     }
+    public UnsupportedTypeError(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }

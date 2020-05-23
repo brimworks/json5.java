@@ -4,7 +4,6 @@ import com.brimworks.json5.JSON5Parser;
 import com.brimworks.json5.JSON5Location;
 import com.brimworks.json5.JSON5ParseError;
 import com.brimworks.databind.DataBind;
-import com.brimworks.databind.VisitorBuilder;
 import com.brimworks.databind.UnsupportedTypeError;
 import java.nio.file.Path;
 import java.nio.ByteBuffer;

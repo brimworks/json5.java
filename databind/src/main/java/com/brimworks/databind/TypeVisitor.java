@@ -2,8 +2,8 @@ package com.brimworks.databind;
 
 public interface TypeVisitor {
     void visit(Object val);
-    ObjectVisitor visitObject();
-    ArrayVisitor visitArray();
+    ObjectVisitor visitObject(int size);
+    ArrayVisitor visitArray(int size);
 
     // PRIMITIVES:
     default void visit(boolean val) {

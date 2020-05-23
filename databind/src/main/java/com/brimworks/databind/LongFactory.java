@@ -2,17 +2,17 @@ package com.brimworks.databind;
 
 public interface LongFactory {
     default long create(Number value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Number.class);
+        throw ctx.unsupportedType("Unexpected number");
     }
     default long create(String value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(String.class);
+        throw ctx.unsupportedType("Unexpected string");
     }
     default long create(boolean value, TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(Boolean.class);
+        throw ctx.unsupportedType("Unexpected boolean");
     }
 
     default long createNull(TypeBuilderContext ctx) {
-        throw ctx.unexpectedType(null);
+        throw ctx.unsupportedType("Unexpected null");
     }
 
     // PRIMITIVES, default to delegation.
