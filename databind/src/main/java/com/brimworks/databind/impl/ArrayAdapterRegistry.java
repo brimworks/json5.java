@@ -13,7 +13,7 @@ import com.brimworks.databind.TypeFactory;
 import com.brimworks.databind.TypeVisitor;
 import com.brimworks.databind.VisitType;
 
-public class ArrayTypeFactoryRegistry implements TypeAdapterRegistry {
+public class ArrayAdapterRegistry implements TypeAdapterRegistry {
     private static abstract class ArrayBuilderImpl implements ArrayBuilder<Object> {
         private int alloc;
         private Class<?> elmType;

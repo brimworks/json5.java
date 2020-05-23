@@ -237,38 +237,6 @@ public class JSON5DataBindTest {
                 objectVisitor.put("users").visit(users.users);
                 objectVisitor.done();
             }
-        }).put(new TypeAdapter<List<Users.User>>() {
-            @Override
-            public Type getRawType() {
-                return new TypeToken<List<Users.User>>() {
-                }.getType();
-            }
-
-            @Override
-            public ArrayBuilder<List<Users.User>> createArray(int size, TypeBuilderContext ctx1) {
-                return new ArrayBuilder<List<Users.User>>() {
-                    List<Users.User> users = new ArrayList<>();
-
-                    @Override
-                    public List<Users.User> build() {
-                        return users;
-                    }
-
-                    @Override
-                    public TypeVisitor add(TypeBuilderContext ctx) {
-                        return ctx.createVisitor(Users.User.class, user -> users.add(user));
-                    }
-                };
-            }
-
-            @Override
-            public void visit(List<Users.User> users, TypeVisitor visitor) {
-                ArrayVisitor dst = visitor.visitArray(users.size());
-                for (Users.User user : users) {
-                    dst.add().visit(user);
-                }
-                dst.done();
-            }
         }).put(new TypeAdapter<Users.User>() {
             @Override
             public Type getRawType() {

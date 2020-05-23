@@ -129,8 +129,9 @@ public enum PrimitiveAdapter {
         public long create(boolean value, TypeBuilderContext ctx) {
             return value ? 1L : 0L;
         }
-    })), ARRAY(builder -> builder.add(new ArrayTypeFactoryRegistry())),
-    
+    })),
+    ARRAY(builder -> builder.add(new ArrayAdapterRegistry())),
+    COLLECTION(builder -> builder.add(new CollectionAdapterRegistry())),
     
     ;
 
