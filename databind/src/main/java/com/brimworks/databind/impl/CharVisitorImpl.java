@@ -1,10 +1,10 @@
 package com.brimworks.databind.impl;
 
 import com.brimworks.databind.CharConsumer;
-
 import com.brimworks.databind.CharFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
 public class CharVisitorImpl extends AbstractVisitorImpl {
@@ -23,6 +23,11 @@ public class CharVisitorImpl extends AbstractVisitorImpl {
 
         this.factory = factory;
         this.consumer = consumer;
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new CharVisitorImpl(context, registry, consumer);
     }
 
     @Override

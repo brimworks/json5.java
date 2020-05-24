@@ -10,6 +10,7 @@ import com.brimworks.databind.ArrayBuilder;
 import com.brimworks.databind.ObjectVisitor;
 import com.brimworks.databind.ObjectBuilder;
 import com.brimworks.databind.Builder;
+import com.brimworks.databind.Location;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeFactory;
 import com.brimworks.databind.TypeRegistry;
@@ -20,7 +21,11 @@ import com.brimworks.databind.VisitType;
 public class TypeVisitorImpl<T> extends AbstractVisitorImpl {
     private Consumer<T> consumer;
     private TypeFactory<T> factory;
-    private Builder<T> builder;
+    private TypeVisitorImpl(TypeBuilderContext context, TypeRegistry registry, Consumer<T> consumer, TypeFactory<T> factory) {
+        super(context, registry);
+        this.consumer = consumer;
+        this.factory = factory;
+    }
     public TypeVisitorImpl(TypeRegistry registry, Type buildType, Consumer<T> consumer) {
         this(null, registry, buildType, consumer);
     }
@@ -30,28 +35,28 @@ public class TypeVisitorImpl<T> extends AbstractVisitorImpl {
         if ( null == buildType ) throw new NullPointerException("expected non-null buildType");
         if ( null == consumer ) throw new NullPointerException("expected non-null consumer");
         if ( null == context ) {
-            context = new TypeBuilderContextImpl(this, buildType);
+            this.context = new TypeBuilderContextImpl(this, new Location(buildType));
         }
         TypeFactory<T> factory = (TypeFactory<T>)registry.getTypeFactory(buildType);
         if ( null == factory ) {
-            throw context.unsupportedType("No TypeFactory for "+buildType);
+            throw this.context.unsupportedType("No TypeFactory for "+buildType);
         }
 
-        this.context = context;
         this.factory = factory;
         this.consumer = consumer;
-        this.registry = registry;
+    }
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new TypeVisitorImpl<T>(context, registry, consumer, factory);
     }
     @Override
     public ObjectVisitor visitObject(int size) {
         ObjectBuilder<T> builder = factory.createObject(size, context);
-        this.builder = builder;
         return new ObjectVisitorImpl<T>(context, builder, consumer);
     }
     @Override
     public ArrayVisitor visitArray(int size) {
         ArrayBuilder<T> builder = factory.createArray(size, context);
-        this.builder = builder;
         return new ArrayVisitorImpl<T>(context, builder, consumer);
     }
     @Override

@@ -1,7 +1,7 @@
 package com.brimworks.databind;
 
 /**
- * The return type of {@link TypeVisitor#visitArray()}.
+ * The return type of {@link TypeVisitor#visitArray(int)}.
  */
 public interface ArrayVisitor {
     /**

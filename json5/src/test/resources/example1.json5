@@ -14,7 +14,7 @@
             name: "Oscar",
         },
     ],
-    friends: [],
+    friends: ["Joe", "Bob", "Mary"],
     favoriteFood: null,
     isNice: false,
     age: 35,

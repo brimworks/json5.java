@@ -5,6 +5,7 @@ import java.util.function.LongConsumer;
 import com.brimworks.databind.LongFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
 public class LongVisitorImpl extends AbstractVisitorImpl {
@@ -23,6 +24,11 @@ public class LongVisitorImpl extends AbstractVisitorImpl {
 
         this.factory = factory;
         this.consumer = consumer;
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new LongVisitorImpl(context, registry, consumer);
     }
 
     @Override

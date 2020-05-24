@@ -97,7 +97,7 @@ public class JSON5Parser {
 
         @Override
         public void visit(String val, int line, long offset) {
-            boolean isObjectKey = state == State.OBJECT || state == State.APPEND;
+            boolean isObjectKey = state == State.OBJECT || (state == State.APPEND && path.getLast().isObject());
             transitionState(State.STRING_VALUE, line, offset);
             lastString = val;
             if (null != visitor) {

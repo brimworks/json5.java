@@ -1,78 +1,57 @@
 package com.brimworks.databind.impl;
 
 import java.lang.reflect.Type;
+import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.*;
+import java.util.function.DoubleConsumer;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 
-import com.brimworks.databind.*;
+import com.brimworks.databind.BooleanConsumer;
+import com.brimworks.databind.ByteConsumer;
+import com.brimworks.databind.CharConsumer;
+import com.brimworks.databind.FloatConsumer;
+import com.brimworks.databind.Location;
+import com.brimworks.databind.ShortConsumer;
+import com.brimworks.databind.TypeBuilderContext;
+import com.brimworks.databind.TypeVisitor;
+import com.brimworks.databind.TypeVisitorFactory;
+import com.brimworks.databind.UnknownKeyError;
+import com.brimworks.databind.UnsupportedTypeError;
 
 public class TypeBuilderContextImpl implements TypeBuilderContext {
     private TypeVisitorFactory visitorFactory;
-    private TypeBuilderContextImpl parent;
-    private Type buildType;
-    private String key;
-    private int index;
+    private Location location;
 
-    public TypeBuilderContextImpl(TypeVisitorFactory visitorFactory, Type buildType) {
-        this(visitorFactory, buildType, null, null);
-    }
-
-    private TypeBuilderContextImpl(TypeVisitorFactory visitorFactory, Type buildType, String key,
-            TypeBuilderContextImpl parent) {
-        this.visitorFactory = visitorFactory;
-        this.buildType = buildType;
-        this.key = key;
-        this.parent = parent;
-    }
-
-    private TypeBuilderContextImpl(TypeVisitorFactory visitorFactory, Type buildType, int index,
-            TypeBuilderContextImpl parent) {
-        this.visitorFactory = visitorFactory;
-        this.buildType = buildType;
-        this.index = index;
-        this.parent = parent;
+    public TypeBuilderContextImpl(TypeVisitorFactory visitorFactory, Location location) {
+        Objects.requireNonNull(visitorFactory);
+        Objects.requireNonNull(location);
+        this.location = location;
+        this.visitorFactory = visitorFactory.addContext(this);
     }
 
     @Override
-    public TypeBuilderContext child(String key) {
-        return new TypeBuilderContextImpl(visitorFactory, buildType, key, this);
+    public String toString() {
+        StringBuilder sb = new StringBuilder("TypeBuilderContext{");
+        sb.append(location.toString());
+        sb.append("}");
+        return sb.toString();
     }
 
     @Override
-    public TypeBuilderContext child(int index) {
-        return new TypeBuilderContextImpl(visitorFactory, buildType, index, this);
-    }
-
-    private void appendLocation(StringBuilder sb) {
-        if (null != parent) {
-            parent.appendLocation(sb);
-            sb.append("/");
-        } else {
-            sb.append("/");
-        }
-        if (null != key) {
-            sb.append(key.replaceAll("~", "~0").replaceAll("/", "~1"));
-        } else {
-            sb.append("" + index);
-        }
+    public Location getLocation() {
+        return location;
     }
 
     @Override
-    public UnsupportedTypeError unsupportedType() {
-        StringBuilder sb = new StringBuilder("Attempt to convert ");
-        appendLocation(sb);
-        sb.append(" to type ");
-        sb.append(buildType.toString());
-        sb.append(" is not supported");
-        return new UnsupportedTypeError(sb.toString());
+    public TypeBuilderContext createContext(Location newLocation) {
+        return new TypeBuilderContextImpl(visitorFactory, newLocation);
     }
 
     @Override
     public UnsupportedTypeError unsupportedType(String msg) {
         StringBuilder sb = new StringBuilder("Attempt to convert ");
-        appendLocation(sb);
-        sb.append(" to type ");
-        sb.append(buildType.toString());
+        sb.append(location.toString());
         sb.append(" is not supported: ");
         sb.append(msg);
         return new UnsupportedTypeError(sb.toString());
@@ -81,9 +60,7 @@ public class TypeBuilderContextImpl implements TypeBuilderContext {
     @Override
     public UnsupportedTypeError unsupportedType(Throwable ex) {
         StringBuilder sb = new StringBuilder("Attempt to convert ");
-        appendLocation(sb);
-        sb.append(" to type ");
-        sb.append(buildType.toString());
+        sb.append(location.toString());
         sb.append(" is not supported");
         if (null != ex.getMessage()) {
             sb.append(": ");
@@ -94,11 +71,20 @@ public class TypeBuilderContextImpl implements TypeBuilderContext {
 
     @Override
     public UnknownKeyError unknownKey() {
-        StringBuilder sb = new StringBuilder("Unknown key was found at location ");
-        appendLocation(sb);
+        Location locationWithKey = location.findElementOf(Location.KeyElement.class);
+        StringBuilder sb = new StringBuilder("Unknown key '");
+        sb.append(locationWithKey.getElement());
+        sb.append("' was found at location ");
+        sb.append(locationWithKey.getParent().toString());
         sb.append(" when trying to convert to type ");
-        sb.append(buildType.toString());
+        Location locationWithType = location.findElementOf(Location.TargetTypeElement.class);
+        sb.append(locationWithType.getElement().toString());
         return new UnknownKeyError(sb.toString());
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext ctx) {
+        return visitorFactory.addContext(ctx);
     }
 
     @Override

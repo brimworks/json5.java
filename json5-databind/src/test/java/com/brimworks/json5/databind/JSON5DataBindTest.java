@@ -23,6 +23,9 @@ import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
 import com.google.common.reflect.TypeToken;
+import java.nio.file.Paths;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 
 public class JSON5DataBindTest {
     private static String SOURCE = "JSON5ParserTest.java";
@@ -202,47 +205,10 @@ public class JSON5DataBindTest {
     @Tag("unit")
     @Test
     public void testUser() throws IOException {
-        JSON5DataBind json5 = new JSON5DataBind(new DataBind.Builder().put(new TypeAdapter<Users.User>() {
-            @Override
-            public Type getRawType() {
-                return Users.User.class;
-            }
+        JSON5DataBind json5 = new JSON5DataBind(new DataBind.Builder().build());
+        Users users = json5.parse(Paths.get("src/test/resources/users.json"), Users.class);
 
-            @Override
-            public ObjectBuilder<Users.User> createObject(int size, TypeBuilderContext ctx1) {
-                return new ObjectBuilder<Users.User>() {
-                    Users.User user = new Users.User();
-
-                    @Override
-                    public Users.User build() {
-                        return user;
-                    }
-
-                    @Override
-                    public TypeVisitor put(String key, TypeBuilderContext ctx) {
-                        switch (key) {
-                            case "_id":
-                                return ctx.createVisitor(String.class, str -> user._id = str);
-                            case "name":
-                                return ctx.createVisitor(String.class, str -> user.name = str);
-                            default:
-                                throw ctx.unknownKey();
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public void visit(Users.User user, TypeVisitor visitor) {
-            }
-        }).build());
-        Users users = json5.parse("{\"users\":[{\"_id\":\"Jim\",\"name\":\"Bean\"}]}", SOURCE, Users.class);
-        Users expect = new Users();
-        expect.users = new ArrayList<>();
-        Users.User jim = new Users.User();
-        jim._id = "Jim";
-        jim.name = "Bean";
-        expect.users.add(jim);
+        Users expect = new ObjectMapper().readValue(new File("src/test/resources/users.json"), Users.class);
         assertEquals(expect.users, users.users);
     }
 }

@@ -213,7 +213,11 @@ public class JSON5ParserTest {
             }));
             person.put("favoriteFood", null);
             person.put("isNice", false);
-            person.put("friends", new ArrayList<Object>());
+            person.put("friends", list(friend -> {
+                friend.add("Joe");
+                friend.add("Bob");
+                friend.add("Mary");
+            }));
             person.put("age", 35L);
         }), value);
     }

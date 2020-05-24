@@ -17,4 +17,5 @@ public interface TypeVisitorFactory {
     TypeVisitor createCharVisitor(CharConsumer save);
     TypeVisitor createDoubleVisitor(DoubleConsumer save);
     TypeVisitor createFloatVisitor(FloatConsumer save);
+    TypeVisitorFactory addContext(TypeBuilderContext ctx);
 }

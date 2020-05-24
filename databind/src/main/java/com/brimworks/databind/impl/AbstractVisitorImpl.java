@@ -22,6 +22,19 @@ public abstract class AbstractVisitorImpl implements TypeVisitor, TypeVisitorFac
     }
 
     @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        String name = getClass().getName();
+        int dot = name.lastIndexOf('.');
+        sb.append(name.substring(dot+1));
+        sb.append("{");
+        sb.append("context=");
+        sb.append(context.toString());
+        sb.append("}");
+        return sb.toString();
+    }
+
+    @Override
     public ObjectVisitor visitObject(int size) {
         throw context.unsupportedType("Unexpected object");
     }
@@ -33,47 +46,47 @@ public abstract class AbstractVisitorImpl implements TypeVisitor, TypeVisitorFac
 
     @Override
     public <U> TypeVisitor createVisitor(Type type, Consumer<U> save) {
-        return new TypeVisitorImpl<U>(context, registry, type, save);
+        return new TypeVisitorImpl<U>(context.createContext(context.getLocation().addTargetType(type)), registry, type, save);
     }
 
     @Override
     public TypeVisitor createBooleanVisitor(BooleanConsumer save) {
-        return new BooleanVisitorImpl(context, registry, save);
+        return new BooleanVisitorImpl(context.createContext(context.getLocation().addTargetType(Boolean.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createLongVisitor(LongConsumer save) {
-        return new LongVisitorImpl(context, registry, save);
+        return new LongVisitorImpl(context.createContext(context.getLocation().addTargetType(Long.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createIntVisitor(IntConsumer save) {
-        return new IntVisitorImpl(context, registry, save);
+        return new IntVisitorImpl(context.createContext(context.getLocation().addTargetType(Integer.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createShortVisitor(ShortConsumer save) {
-        return new ShortVisitorImpl(context, registry, save);
+        return new ShortVisitorImpl(context.createContext(context.getLocation().addTargetType(Short.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createByteVisitor(ByteConsumer save) {
-        return new ByteVisitorImpl(context, registry, save);
+        return new ByteVisitorImpl(context.createContext(context.getLocation().addTargetType(Byte.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createCharVisitor(CharConsumer save) {
-        return new CharVisitorImpl(context, registry, save);
+        return new CharVisitorImpl(context.createContext(context.getLocation().addTargetType(Character.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createDoubleVisitor(DoubleConsumer save) {
-        return new DoubleVisitorImpl(context, registry, save);
+        return new DoubleVisitorImpl(context.createContext(context.getLocation().addTargetType(Double.TYPE)), registry, save);
     }
 
     @Override
     public TypeVisitor createFloatVisitor(FloatConsumer save) {
-        return new FloatVisitorImpl(context, registry, save);
+        return new FloatVisitorImpl(context.createContext(context.getLocation().addTargetType(Float.TYPE)), registry, save);
     }
 
 }

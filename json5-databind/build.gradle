@@ -1,5 +1,6 @@
 dependencies {
-    implementation project(':json5')
-    implementation project(':databind')
+    compile project(':json5')
+    compile project(':databind')
     testImplementation group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
 }

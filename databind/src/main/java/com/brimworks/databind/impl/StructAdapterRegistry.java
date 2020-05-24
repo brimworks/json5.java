@@ -16,7 +16,7 @@ public class StructAdapterRegistry implements TypeAdapterRegistry {
         void accept(TypeVisitor visitor, Field field, Object inst) throws IllegalAccessException;
     }
     interface FieldFactory {
-        TypeVisitor put(Object inst, TypeBuilderContext ctx) throws IllegalAccessException;
+        TypeVisitor put(Object inst, TypeBuilderContext ctx);
     }
     private static Map<Class<?>, FieldConsumer> FIELD_CONSUMERS = new HashMap<>();
     {{
@@ -144,7 +144,7 @@ public class StructAdapterRegistry implements TypeAdapterRegistry {
                 Object obj;
                 try {
                     obj = ctype.newInstance();
-                } catch ( Exception ex ) {
+                } catch ( InstantiationException|IllegalAccessException ex ) {
                     throw ctx1.unsupportedType(ex);
                 }
                 return new ObjectBuilder<Object>() {
@@ -154,11 +154,7 @@ public class StructAdapterRegistry implements TypeAdapterRegistry {
                         if ( null == factory ) {
                             throw ctx.unknownKey();
                         }
-                        try {
-                            return factory.put(obj, ctx);
-                        } catch ( Exception ex ) {
-                            throw ctx.unsupportedType(ex);
-                        }
+                        return factory.put(obj, ctx);
                     }
                     @Override
                     public Object build() {

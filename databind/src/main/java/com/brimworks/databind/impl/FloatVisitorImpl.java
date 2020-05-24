@@ -1,10 +1,10 @@
 package com.brimworks.databind.impl;
 
 import com.brimworks.databind.FloatConsumer;
-
 import com.brimworks.databind.FloatFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
 public class FloatVisitorImpl extends AbstractVisitorImpl {
@@ -23,6 +23,11 @@ public class FloatVisitorImpl extends AbstractVisitorImpl {
 
         this.factory = factory;
         this.consumer = consumer;
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new FloatVisitorImpl(context, registry, consumer);
     }
 
     @Override

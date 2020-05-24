@@ -1,10 +1,10 @@
 package com.brimworks.databind.impl;
 
 import com.brimworks.databind.BooleanConsumer;
-
 import com.brimworks.databind.BooleanFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
 public class BooleanVisitorImpl extends AbstractVisitorImpl {
@@ -23,6 +23,11 @@ public class BooleanVisitorImpl extends AbstractVisitorImpl {
 
         this.factory = factory;
         this.consumer = consumer;
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new BooleanVisitorImpl(context, registry, consumer);
     }
 
     @Override

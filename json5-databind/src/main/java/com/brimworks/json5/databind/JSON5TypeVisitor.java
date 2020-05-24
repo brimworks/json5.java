@@ -28,6 +28,10 @@ public class JSON5TypeVisitor implements JSON5Visitor {
         TypeVisitor visitor;
         ObjectVisitor objectVisitor;
         ArrayVisitor arrayVisitor;
+        @Override
+        public String toString() {
+            return "Frame{visitor="+visitor+", objectVisitor="+objectVisitor+", arrayVisitor="+arrayVisitor+"}";
+        }
     }
     private List<Frame> stack = new ArrayList<>();
     private Object result;

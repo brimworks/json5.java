@@ -5,6 +5,7 @@ import java.util.function.IntConsumer;
 import com.brimworks.databind.IntFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
 public class IntVisitorImpl extends AbstractVisitorImpl {
@@ -23,6 +24,11 @@ public class IntVisitorImpl extends AbstractVisitorImpl {
 
         this.factory = factory;
         this.consumer = consumer;
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new IntVisitorImpl(context, registry, consumer);
     }
 
     @Override

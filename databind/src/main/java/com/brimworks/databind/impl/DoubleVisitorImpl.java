@@ -5,6 +5,7 @@ import java.util.function.DoubleConsumer;
 import com.brimworks.databind.DoubleFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
+import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
 public class DoubleVisitorImpl extends AbstractVisitorImpl {
@@ -23,6 +24,11 @@ public class DoubleVisitorImpl extends AbstractVisitorImpl {
 
         this.factory = factory;
         this.consumer = consumer;
+    }
+
+    @Override
+    public TypeVisitorFactory addContext(TypeBuilderContext context) {
+        return new DoubleVisitorImpl(context, registry, consumer);
     }
 
     @Override
