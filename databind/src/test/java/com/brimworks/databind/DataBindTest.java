@@ -54,7 +54,7 @@ public class DataBindTest {
                             case "spouse":
                                 return ctx.createVisitor(Person.class, spouse -> person.spouse = spouse);
                             default:
-                                throw ctx.unexpectedKey(key);
+                                throw ctx.unknownKey();
                         }
                     }
                 };

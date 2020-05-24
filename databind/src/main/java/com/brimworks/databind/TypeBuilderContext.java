@@ -4,7 +4,7 @@ public interface TypeBuilderContext extends TypeVisitorFactory {
     UnsupportedTypeError unsupportedType(Throwable ex);
     UnsupportedTypeError unsupportedType(String msg);
     UnsupportedTypeError unsupportedType();
-    UnknownKeyError unexpectedKey(String key);
+    UnknownKeyError unknownKey();
 
 
     TypeBuilderContext child(String key);

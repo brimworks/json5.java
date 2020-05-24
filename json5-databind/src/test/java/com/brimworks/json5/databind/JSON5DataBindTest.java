@@ -175,7 +175,7 @@ public class JSON5DataBindTest {
                             case "lastName":
                                 return ctx.createVisitor(String.class, str -> person.lname = str);
                             default:
-                                throw ctx.unexpectedKey(key);
+                                throw ctx.unknownKey();
                         }
                     }
                 };
@@ -202,42 +202,7 @@ public class JSON5DataBindTest {
     @Tag("unit")
     @Test
     public void testUser() throws IOException {
-        JSON5DataBind json5 = new JSON5DataBind(new DataBind.Builder().put(new TypeAdapter<Users>() {
-            @Override
-            public Type getRawType() {
-                return Users.class;
-            }
-
-            @Override
-            public ObjectBuilder<Users> createObject(int size, TypeBuilderContext ctx1) {
-                return new ObjectBuilder<Users>() {
-                    Users users = new Users();
-
-                    @Override
-                    public Users build() {
-                        return users;
-                    }
-
-                    @Override
-                    public TypeVisitor put(String key, TypeBuilderContext ctx) {
-                        switch (key) {
-                            case "users":
-                                return ctx.createVisitor(new TypeToken<List<Users.User>>() {
-                                }.getType(), list -> users.users = (List<Users.User>) list);
-                            default:
-                                throw ctx.unexpectedKey(key);
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public void visit(Users users, TypeVisitor visitor) {
-                ObjectVisitor objectVisitor = visitor.visitObject(1);
-                objectVisitor.put("users").visit(users.users);
-                objectVisitor.done();
-            }
-        }).put(new TypeAdapter<Users.User>() {
+        JSON5DataBind json5 = new JSON5DataBind(new DataBind.Builder().put(new TypeAdapter<Users.User>() {
             @Override
             public Type getRawType() {
                 return Users.User.class;
@@ -261,7 +226,7 @@ public class JSON5DataBindTest {
                             case "name":
                                 return ctx.createVisitor(String.class, str -> user.name = str);
                             default:
-                                throw ctx.unexpectedKey(key);
+                                throw ctx.unknownKey();
                         }
                     }
                 };

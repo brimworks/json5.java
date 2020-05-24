@@ -2,14 +2,9 @@ package com.brimworks.databind.impl;
 
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
+import java.util.function.*;
 
-import com.brimworks.databind.TypeBuilderContext;
-import com.brimworks.databind.TypeVisitor;
-import com.brimworks.databind.TypeVisitorFactory;
-import com.brimworks.databind.UnknownKeyError;
-import com.brimworks.databind.UnsupportedTypeError;
+import com.brimworks.databind.*;
 
 public class TypeBuilderContextImpl implements TypeBuilderContext {
     private TypeVisitorFactory visitorFactory;
@@ -98,12 +93,10 @@ public class TypeBuilderContextImpl implements TypeBuilderContext {
     }
 
     @Override
-    public UnknownKeyError unexpectedKey(String key) {
-        StringBuilder sb = new StringBuilder("Unknown key '");
-        sb.append(key);
-        sb.append("' was found at location ");
+    public UnknownKeyError unknownKey() {
+        StringBuilder sb = new StringBuilder("Unknown key was found at location ");
         appendLocation(sb);
-        sb.append(" when tryint to convert to type ");
+        sb.append(" when trying to convert to type ");
         sb.append(buildType.toString());
         return new UnknownKeyError(sb.toString());
     }
@@ -118,10 +111,10 @@ public class TypeBuilderContextImpl implements TypeBuilderContext {
     }
 
     @Override
-    public TypeVisitor createIntVisitor(IntConsumer save) {
-        TypeVisitor result = visitorFactory.createIntVisitor(save);
+    public TypeVisitor createBooleanVisitor(BooleanConsumer save) {
+        TypeVisitor result = visitorFactory.createBooleanVisitor(save);
         if (null == result) {
-            throw unsupportedType("No factory for int");
+            throw unsupportedType("No factory for boolean");
         }
         return result;
     }
@@ -131,6 +124,60 @@ public class TypeBuilderContextImpl implements TypeBuilderContext {
         TypeVisitor result = visitorFactory.createLongVisitor(save);
         if (null == result) {
             throw unsupportedType("No factory for long");
+        }
+        return result;
+    }
+
+    @Override
+    public TypeVisitor createIntVisitor(IntConsumer save) {
+        TypeVisitor result = visitorFactory.createIntVisitor(save);
+        if (null == result) {
+            throw unsupportedType("No factory for int");
+        }
+        return result;
+    }
+
+    @Override
+    public TypeVisitor createShortVisitor(ShortConsumer save) {
+        TypeVisitor result = visitorFactory.createShortVisitor(save);
+        if (null == result) {
+            throw unsupportedType("No factory for short");
+        }
+        return result;
+    }
+
+    @Override
+    public TypeVisitor createByteVisitor(ByteConsumer save) {
+        TypeVisitor result = visitorFactory.createByteVisitor(save);
+        if (null == result) {
+            throw unsupportedType("No factory for byte");
+        }
+        return result;
+    }
+
+    @Override
+    public TypeVisitor createCharVisitor(CharConsumer save) {
+        TypeVisitor result = visitorFactory.createCharVisitor(save);
+        if (null == result) {
+            throw unsupportedType("No factory for char");
+        }
+        return result;
+    }
+
+    @Override
+    public TypeVisitor createDoubleVisitor(DoubleConsumer save) {
+        TypeVisitor result = visitorFactory.createDoubleVisitor(save);
+        if (null == result) {
+            throw unsupportedType("No factory for double");
+        }
+        return result;
+    }
+
+    @Override
+    public TypeVisitor createFloatVisitor(FloatConsumer save) {
+        TypeVisitor result = visitorFactory.createFloatVisitor(save);
+        if (null == result) {
+            throw unsupportedType("No factory for float");
         }
         return result;
     }

@@ -53,13 +53,13 @@ public class ArrayAdapterRegistry implements TypeAdapterRegistry {
     private Map<Class<?>, TypeFactory<?>> PRIMATIVE_TYPE_FACTORY = new HashMap<>();
     {
         {
-            PRIMATIVE_TYPE_FACTORY.put(Integer.TYPE, new TypeFactory<Object>() {
+            PRIMATIVE_TYPE_FACTORY.put(Boolean.TYPE, new TypeFactory<Object>() {
                 @Override
                 public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
-                    return new ArrayBuilderImpl(Integer.TYPE, size) {
+                    return new ArrayBuilderImpl(Boolean.TYPE, size) {
                         @Override
                         public TypeVisitor add(TypeBuilderContext ctx) {
-                            return ctx.createIntVisitor(elm -> Array.setInt(array, alloc(), elm));
+                            return ctx.createBooleanVisitor(elm -> Array.setBoolean(array, alloc(), elm));
                         }
                     };
                 }
@@ -75,11 +75,88 @@ public class ArrayAdapterRegistry implements TypeAdapterRegistry {
                     };
                 }
             });
+            PRIMATIVE_TYPE_FACTORY.put(Integer.TYPE, new TypeFactory<Object>() {
+                @Override
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Integer.TYPE, size) {
+                        @Override
+                        public TypeVisitor add(TypeBuilderContext ctx) {
+                            return ctx.createIntVisitor(elm -> Array.setInt(array, alloc(), elm));
+                        }
+                    };
+                }
+            });
+            PRIMATIVE_TYPE_FACTORY.put(Short.TYPE, new TypeFactory<Object>() {
+                @Override
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Short.TYPE, size) {
+                        @Override
+                        public TypeVisitor add(TypeBuilderContext ctx) {
+                            return ctx.createShortVisitor(elm -> Array.setShort(array, alloc(), elm));
+                        }
+                    };
+                }
+            });
+            PRIMATIVE_TYPE_FACTORY.put(Byte.TYPE, new TypeFactory<Object>() {
+                @Override
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Byte.TYPE, size) {
+                        @Override
+                        public TypeVisitor add(TypeBuilderContext ctx) {
+                            return ctx.createByteVisitor(elm -> Array.setByte(array, alloc(), elm));
+                        }
+                    };
+                }
+            });
+            PRIMATIVE_TYPE_FACTORY.put(Character.TYPE, new TypeFactory<Object>() {
+                @Override
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Character.TYPE, size) {
+                        @Override
+                        public TypeVisitor add(TypeBuilderContext ctx) {
+                            return ctx.createCharVisitor(elm -> Array.setChar(array, alloc(), elm));
+                        }
+                    };
+                }
+            });
+            PRIMATIVE_TYPE_FACTORY.put(Double.TYPE, new TypeFactory<Object>() {
+                @Override
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Double.TYPE, size) {
+                        @Override
+                        public TypeVisitor add(TypeBuilderContext ctx) {
+                            return ctx.createDoubleVisitor(elm -> Array.setDouble(array, alloc(), elm));
+                        }
+                    };
+                }
+            });
+            PRIMATIVE_TYPE_FACTORY.put(Float.TYPE, new TypeFactory<Object>() {
+                @Override
+                public ArrayBuilder<Object> createArray(int size, TypeBuilderContext ctx1) {
+                    return new ArrayBuilderImpl(Float.TYPE, size) {
+                        @Override
+                        public TypeVisitor add(TypeBuilderContext ctx) {
+                            return ctx.createFloatVisitor(elm -> Array.setFloat(array, alloc(), elm));
+                        }
+                    };
+                }
+            });
         }
     }
     private Map<Class<?>, VisitType<?>> PRIMATIVE_VISIT_TYPE = new HashMap<>();
     {
         {
+            PRIMATIVE_VISIT_TYPE.put(Long.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getLong(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
             PRIMATIVE_VISIT_TYPE.put(Integer.TYPE, new VisitType<Object>() {
                 @Override
                 public void visit(Object array, TypeVisitor visitor) {
@@ -87,6 +164,72 @@ public class ArrayAdapterRegistry implements TypeAdapterRegistry {
                     ArrayVisitor arrayVisitor = visitor.visitArray(len);
                     for (int i = 0; i < len; i++) {
                         arrayVisitor.add().visit(Array.getInt(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
+            PRIMATIVE_VISIT_TYPE.put(Short.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getShort(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
+            PRIMATIVE_VISIT_TYPE.put(Byte.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getByte(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
+            PRIMATIVE_VISIT_TYPE.put(Character.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getChar(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
+            PRIMATIVE_VISIT_TYPE.put(Double.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getDouble(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
+            PRIMATIVE_VISIT_TYPE.put(Float.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getFloat(array, i));
+                    }
+                    arrayVisitor.done();
+                }
+            });
+            PRIMATIVE_VISIT_TYPE.put(Boolean.TYPE, new VisitType<Object>() {
+                @Override
+                public void visit(Object array, TypeVisitor visitor) {
+                    int len = Array.getLength(array);
+                    ArrayVisitor arrayVisitor = visitor.visitArray(len);
+                    for (int i = 0; i < len; i++) {
+                        arrayVisitor.add().visit(Array.getBoolean(array, i));
                     }
                     arrayVisitor.done();
                 }

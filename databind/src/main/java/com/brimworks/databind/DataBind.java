@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import java.util.List;
 import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,8 +22,14 @@ public class DataBind implements TypeRegistry {
     private ArrayList<TypeFactoryRegistry> factoryRegistries = new ArrayList<>();
     private Map<Type, VisitType<?>> visits = new HashMap<>();
     private ArrayList<VisitTypeRegistry> visitRegistries = new ArrayList<>();
-    private IntFactory intFactory = null;
+    private BooleanFactory booleanFactory = null;
     private LongFactory longFactory = null;
+    private IntFactory intFactory = null;
+    private ShortFactory shortFactory = null;
+    private ByteFactory byteFactory = null;
+    private CharFactory charFactory = null;
+    private DoubleFactory doubleFactory = null;
+    private FloatFactory floatFactory = null;
 
     /**
      * Obtain a builder instance for the same state as the this DataBind.
@@ -93,6 +98,54 @@ public class DataBind implements TypeRegistry {
             if (null == adapter)
                 throw new NullPointerException("adapter must be non-null");
             instance.longFactory = adapter;
+            return this;
+        }
+
+        @Override
+        public Builder put(BooleanFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.booleanFactory = adapter;
+            return this;
+        }
+
+        @Override
+        public Builder put(ShortFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.shortFactory = adapter;
+            return this;
+        }
+
+        @Override
+        public Builder put(ByteFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.byteFactory = adapter;
+            return this;
+        }
+
+        @Override
+        public Builder put(CharFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.charFactory = adapter;
+            return this;
+        }
+
+        @Override
+        public Builder put(DoubleFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.doubleFactory = adapter;
+            return this;
+        }
+
+        @Override
+        public Builder put(FloatFactory adapter) {
+            if (null == adapter)
+                throw new NullPointerException("adapter must be non-null");
+            instance.floatFactory = adapter;
             return this;
         }
 
@@ -234,6 +287,14 @@ public class DataBind implements TypeRegistry {
      * {@inheritDoc}
      */
     @Override
+    public LongFactory getLongFactory() {
+        return longFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public IntFactory getIntFactory() {
         return intFactory;
     }
@@ -242,8 +303,48 @@ public class DataBind implements TypeRegistry {
      * {@inheritDoc}
      */
     @Override
-    public LongFactory getLongFactory() {
-        return longFactory;
+    public ShortFactory getShortFactory() {
+        return shortFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ByteFactory getByteFactory() {
+        return byteFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CharFactory getCharFactory() {
+        return charFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public DoubleFactory getDoubleFactory() {
+        return doubleFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public FloatFactory getFloatFactory() {
+        return floatFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BooleanFactory getBooleanFactory() {
+        return booleanFactory;
     }
 
     /**

@@ -17,9 +17,7 @@ import com.brimworks.databind.TypeVisitor;
 import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
-public class TypeVisitorImpl<T> implements TypeVisitor, TypeVisitorFactory {
-    private TypeBuilderContext context;
-    private TypeRegistry registry;
+public class TypeVisitorImpl<T> extends AbstractVisitorImpl {
     private Consumer<T> consumer;
     private TypeFactory<T> factory;
     private Builder<T> builder;
@@ -27,6 +25,7 @@ public class TypeVisitorImpl<T> implements TypeVisitor, TypeVisitorFactory {
         this(null, registry, buildType, consumer);
     }
     public TypeVisitorImpl(TypeBuilderContext context, TypeRegistry registry, Type buildType, Consumer<T> consumer) {
+        super(context, registry);
         if ( null == registry ) throw new NullPointerException("expected non-null registry");
         if ( null == buildType ) throw new NullPointerException("expected non-null buildType");
         if ( null == consumer ) throw new NullPointerException("expected non-null consumer");
@@ -99,19 +98,5 @@ public class TypeVisitorImpl<T> implements TypeVisitor, TypeVisitorFactory {
     @Override
     public void visit(float val) {
         consumer.accept(factory.create(val, context));
-    }
-    @Override
-    public <U> TypeVisitor createVisitor(Type type, Consumer<U> save) {
-        return new TypeVisitorImpl<U>(context, registry, type, save);
-    }
-
-    @Override
-    public TypeVisitor createIntVisitor(IntConsumer save) {
-        return new IntVisitorImpl(context, registry, save);
-    }
-
-    @Override
-    public TypeVisitor createLongVisitor(LongConsumer save) {
-        return new LongVisitorImpl(context, registry, save);
     }
 }

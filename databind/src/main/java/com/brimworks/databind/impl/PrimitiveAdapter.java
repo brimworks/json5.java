@@ -130,9 +130,10 @@ public enum PrimitiveAdapter {
             return value ? 1L : 0L;
         }
     })),
+    // Lowest priority is first:
+    STRUCT(builder -> builder.add(new StructAdapterRegistry())),
     ARRAY(builder -> builder.add(new ArrayAdapterRegistry())),
     COLLECTION(builder -> builder.add(new CollectionAdapterRegistry())),
-    
     ;
 
     private PrimitiveAdapter(Consumer<TypeRegistry.Builder> consumer) {

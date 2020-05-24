@@ -1,24 +1,24 @@
 package com.brimworks.databind.impl;
 
-import java.util.function.LongConsumer;
+import com.brimworks.databind.CharConsumer;
 
-import com.brimworks.databind.LongFactory;
+import com.brimworks.databind.CharFactory;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeRegistry;
 import com.brimworks.databind.VisitType;
 
-public class LongVisitorImpl extends AbstractVisitorImpl {
-    private LongFactory factory;
-    private LongConsumer consumer;
+public class CharVisitorImpl extends AbstractVisitorImpl {
+    private CharFactory factory;
+    private CharConsumer consumer;
 
-    public LongVisitorImpl(TypeBuilderContext context, TypeRegistry registry, LongConsumer consumer) {
+    public CharVisitorImpl(TypeBuilderContext context, TypeRegistry registry, CharConsumer consumer) {
         super(context, registry);
         if (null == consumer)
             throw new NullPointerException("expected non-null consumer");
 
-        LongFactory factory = registry.getLongFactory();
+        CharFactory factory = registry.getCharFactory();
         if (null == factory) {
-            throw context.unsupportedType("No TypeFactory for long");
+            throw context.unsupportedType("No TypeFactory for char");
         }
 
         this.factory = factory;
