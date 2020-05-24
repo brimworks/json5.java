@@ -313,11 +313,11 @@ main := |*
     ":"                > { tokenStart(); }
         { visitor.visitColon(tsLine, tsOffset); };
     "null"             > { tokenStart(); }
-        { visitor.visitNull(tsLine, tsOffset); };
+        { visitor.visitNull(tsLine, tsOffset); stringBuffer.clear(); };
     "true"             > { tokenStart(); }
-        { visitor.visit(true, tsLine, tsOffset); };
+        { visitor.visit(true, tsLine, tsOffset); stringBuffer.clear(); };
     "false"            > { tokenStart(); }
-        { visitor.visit(false, tsLine, tsOffset); };
+        { visitor.visit(false, tsLine, tsOffset); stringBuffer.clear(); };
     JSON5Number        > { tokenStart(); inFraction=false; }
         { resetNumber(); };
     JSON5Identifier    > { tokenStart(); }

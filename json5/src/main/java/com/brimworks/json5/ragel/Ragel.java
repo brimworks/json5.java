@@ -72,7 +72,7 @@ abstract public class Ragel {
     /**
      * Used for accumulating a string token value.
      */
-    private CharBuffer stringBuffer;
+    protected CharBuffer stringBuffer;
 
     /**
      * Used for accumulating the significand value of a number.

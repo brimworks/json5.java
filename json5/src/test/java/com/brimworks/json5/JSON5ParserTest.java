@@ -1,32 +1,30 @@
 package com.brimworks.json5;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.channels.FileChannel;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.Disabled;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import static java.nio.file.StandardOpenOption.READ;
 
 public class JSON5ParserTest {
+    private static Object NULL = new Object();
     private static String SOURCE = "JSON5ParserTest.java";
 
     public static List<String> json5Tests() throws IOException {
@@ -58,6 +56,14 @@ public class JSON5ParserTest {
         fail("Expected " + (expectSuccess ? "success" : "failure") + ", but got success when parsing " + path);
     }
 
+    @Tag("unit")
+    @Test
+    public void parseConstants() {
+        assertParsed("true", Boolean.TRUE);
+        assertParsed("false", Boolean.FALSE);
+        assertParsed("null", NULL);
+    }
+
     private void assertParsed(String txt, Object expect) {
         Object[] got = new Object[1];
         parser.setVisitor(new JSON5Visitor() {
@@ -69,6 +75,14 @@ public class JSON5ParserTest {
             @Override
             public void visit(String val, int line, long offset) {
                 got[0] = val;
+            }
+            @Override
+            public void visit(boolean val, int line, long offset) {
+                got[0] = val;
+            }
+            @Override
+            public void visitNull(int line, long offset) {
+                got[0] = NULL;
             }
         });
         got[0] = null;
@@ -219,6 +233,14 @@ public class JSON5ParserTest {
                 friend.add("Mary");
             }));
             person.put("age", 35L);
+        }), value);
+
+        parser.parse(ByteBuffer.wrap("{True:true,False:false,Null:null}".getBytes(UTF_8)), "string");
+        value = stack.remove(0);
+        assertEquals(map(map -> {
+            map.put("True", Boolean.TRUE);
+            map.put("False", Boolean.FALSE);
+            map.put("Null", null);
         }), value);
     }
 
