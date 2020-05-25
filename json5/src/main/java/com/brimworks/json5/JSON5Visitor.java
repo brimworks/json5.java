@@ -148,7 +148,18 @@ public interface JSON5Visitor {
     }
 
     /**
-     * Called when a new VALUE has been observed which should be appended to an
+     * Called before a new VALUE has been observed which should be appended to an
+     * array.
+     * 
+     * @param index  index of array value being visited.
+     * @param line   source-input line of token
+     * @param offset source-input byte offset from beginning of stream
+     */
+    default void visitIndex(int index, int line, long offset) {
+    }
+
+    /**
+     * Called after a new VALUE has been observed which should be appended to an
      * array.
      * 
      * @param line   source-input line of token

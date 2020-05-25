@@ -81,6 +81,9 @@ public class JSON5Parser {
         public void visitNull(int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
+                if (!path.isEmpty() && path.getLast().isArray()) {
+                    visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                }
                 visitor.visitNull(line, offset);
                 visitValue(line, offset);
             }
@@ -90,6 +93,9 @@ public class JSON5Parser {
         public void visit(boolean val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
+                if (!path.isEmpty() && path.getLast().isArray()) {
+                    visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                }
                 visitor.visit(val, line, offset);
                 visitValue(line, offset);
             }
@@ -101,7 +107,10 @@ public class JSON5Parser {
             transitionState(State.STRING_VALUE, line, offset);
             lastString = val;
             if (null != visitor) {
-                if(!isObjectKey) {
+                if (!isObjectKey) {
+                    if (!path.isEmpty() && path.getLast().isArray()) {
+                        visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                    }
                     visitor.visit(val, line, offset);
                     visitValue(line, offset);
                 } else {
@@ -114,6 +123,9 @@ public class JSON5Parser {
         public void visitNumber(BigInteger val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
+                if (!path.isEmpty() && path.getLast().isArray()) {
+                    visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                }
                 visitor.visitNumber(val, line, offset);
                 visitValue(line, offset);
             }
@@ -123,6 +135,9 @@ public class JSON5Parser {
         public void visitNumber(BigDecimal val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
+                if (!path.isEmpty() && path.getLast().isArray()) {
+                    visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                }
                 visitor.visitNumber(val, line, offset);
                 visitValue(line, offset);
             }
@@ -132,6 +147,9 @@ public class JSON5Parser {
         public void visitNumber(long val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
+                if (!path.isEmpty() && path.getLast().isArray()) {
+                    visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                }
                 visitor.visitNumber(val, line, offset);
                 visitValue(line, offset);
             }
@@ -141,6 +159,9 @@ public class JSON5Parser {
         public void visitNumber(double val, int line, long offset) {
             transitionState(State.VALUE, line, offset);
             if (null != visitor) {
+                if (!path.isEmpty() && path.getLast().isArray()) {
+                    visitor.visitIndex(path.getLast().asIndex(), line, offset);
+                }
                 visitor.visitNumber(val, line, offset);
                 visitValue(line, offset);
             }
@@ -165,9 +186,13 @@ public class JSON5Parser {
         @Override
         public void startObject(int line, long offset) {
             transitionState(State.OBJECT, line, offset);
+            JSON5Key key = path.peekLast();
             begins.addLast(new LineOffset(line, offset));
             path.addLast(EMPTY);
             if (null != visitor) {
+                if (null != key && key.isArray()) {
+                    visitor.visitIndex(key.asIndex(), line, offset);
+                }
                 visitor.startObject(line, offset);
             }
         }
@@ -191,10 +216,15 @@ public class JSON5Parser {
         @Override
         public void startArray(int line, long offset) {
             transitionState(State.ARRAY, line, offset);
+            JSON5Key key = path.peekLast();
             begins.addLast(new LineOffset(line, offset));
             path.addLast(new JSON5Key(0));
-            if (null != visitor)
+            if (null != visitor) {
+                if (null != key && key.isArray()) {
+                    visitor.visitIndex(key.asIndex(), line, offset);
+                }
                 visitor.startArray(line, offset);
+            }
         }
 
         @Override
