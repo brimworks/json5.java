@@ -1,9 +1,12 @@
-Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/json5.java/json5.java/images/download.svg?version=latest) ](https://bintray.com/brimworks/json5.java/json5.java/1.0.0/link)
+Latest Version: [ ![Download](https://api.bintray.com/packages/brimworks/json5.java/json5.java/images/download.svg?version=latest) ](https://bintray.com/brimworks/json5.java/json5.java/2.0.0/link)
 
 Build Health: [![](https://jitci.com/gh/brimworks/json5.java/svg)](https://jitci.com/gh/brimworks/json5.java)
 
 [Javadocs](https://www.javadoc.io/doc/com.brimworks/json5)
 
+# Performance Note
+
+I have a fork of the [java-json-benchmark](https://github.com/brimworks/java-json-benchmark) that adds support for Deserializing JSON with this library. Currently, this library is about 20x SLOWER than using Jackson. I'm investigating ways to improve the performance. Initial profiling reveals that a little over 10% of the time is spent in `Ragel.appendStringBufferUTF8()` which performs UTF-8 transcoding.
 
 # JSON5 Library
 
@@ -75,15 +78,56 @@ Object value = stack.remove(0);
 
 ```
 
-# Databind (coming soon)
+# Databind
 
-I'm currently working on a "universal databind" core model that can be used to convert between types, perform a deep copy of a type, and/or serialize/deserialize a type.
+If you prefer to avoid writing a visitor, you can use the databind library to parse a file as such:
 
-Once I have the core working models, I plan to create adapters to serialize/deserialize with the json5 library above.
+```java
+import com.brimworks.json5.databind.JSON5DataBind;
+import com.brimworks.databind.DataBind;
 
-Longer term, having adapters for the "gson" and "jackson" serialize/deserialize ecosystem are possibilities. Feel free to file an "issue" if you are interested in helping out.
+public class Config {
+    public String string;
+    public double number;
+}
+
+JSON5DataBind json5 = new JSON5DataBind(new DataBind.Builder().build());
+Config config = json5.parse(Paths.get("config.json5"), Config.class);
+```
+
+...and if `config.json5` looks like this:
+
+```javascript
+{
+    /* Greetings */
+    string: "Hello",
+    // PI:
+    number: 3.14,
+}
+```
+
+Then the `Config` class will be populated with the "Hello" string and 3.14 number as expected.
+
+# Future Plans?
+
+When writing this, I thought the visitor/builder pattern would make type transformations easier. However,
+after working with this pattern for a bit I am coming around to the more prevalent builder/reader paradigm.
+One of the problems with visitor/builder pattern is all the lambdas necessary to set the types. It is also
+harder to adapt this visitor/buidler pattern to existing json ecosystems.
+
+What does this mean?
+
+I'll experiment with adding new APIs to `JSON5Parser` which return a `JSON5Reader` and then tap into
+the gson and jackson databind ecosystems by writing simple adaptors. If you are interested in helping out,
+feel free to file an issue.
 
 # Release Notes
+
+## Version 2.0.0
+
+More backwards incompatible changes in the databind library, but the only changes to the json5 parser was adding support for a new `visitIndex()` method which is the array analog to `visitKey()`. Also, a major bug was fixed where the string buffer was not cleared after visiting the "constant" tokens (true, false, null).
+
+The databind library is more complete at this point, supporting all the primitive types.
 
 ## Version 1.0.0
 
