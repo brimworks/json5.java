@@ -6,9 +6,9 @@ Build Health: [![](https://jitci.com/gh/brimworks/json5.java/svg)](https://jitci
 
 # Performance Note
 
-I have a fork of the [java-json-benchmark](https://github.com/brimworks/java-json-benchmark) that adds support for Deserializing JSON with this library. Currently, this library is about 20x SLOWER than using Jackson. I'm investigating ways to improve the performance. Initial profiling reveals that a little over 10% of the time is spent in `Ragel.appendStringBufferUTF8()` which performs UTF-8 transcoding.
+I have a fork of the [java-json-benchmark](https://github.com/brimworks/java-json-benchmark) that adds support for Deserializing JSON with this library. Currently, this library is about 20x SLOWER than using Jackson. I'm investigating ways to improve the performance, but that may come with API changes. Specifically, when profiling, `JSON5Parser` has an annonymous inner class that implements `JSON5Lexer.Visitor` and the various methods called consume 50% of the processing time! My theory is that constructing all the lambdas necessary to implement the visitor/builder pattern is a major contributor to this slow speed. Therefore I'd like to change the code to use a more traditional reader/builder pattern.
 
-# JSON5 Library
+# JSON5 Library (using visitor pattern, SLOW!)
 
 ```java
 // Create a parser instance:
@@ -113,7 +113,7 @@ Then the `Config` class will be populated with the "Hello" string and 3.14 numbe
 When writing this, I thought the visitor/builder pattern would make type transformations easier. However,
 after working with this pattern for a bit I am coming around to the more prevalent builder/reader paradigm.
 One of the problems with visitor/builder pattern is all the lambdas necessary to set the types. It is also
-harder to adapt this visitor/buidler pattern to existing json ecosystems.
+harder to adapt this visitor/builder pattern to existing json ecosystems.
 
 What does this mean?
 
