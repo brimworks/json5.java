@@ -313,6 +313,7 @@ abstract public class Ragel {
         slice.limit(end);
         while (CoderResult.OVERFLOW == utf8Decoder.decode(slice, stringBuffer, true)) {
             CharBuffer fresh = CharBuffer.allocate(stringBuffer.capacity() * 2);
+            stringBuffer.flip();
             fresh.put(stringBuffer);
             stringBuffer = fresh;
         }

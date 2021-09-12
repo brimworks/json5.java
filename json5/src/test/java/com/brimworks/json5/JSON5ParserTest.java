@@ -163,6 +163,14 @@ public class JSON5ParserTest {
 
     @Tag("unit")
     @Test
+    public void parseString() throws IOException {
+        assertParsed("\"hello\\\"world\"", "hello\"world");
+        assertParsed("\"hello\\nworld\"", "hello\nworld");
+        assertParsed("\"\"", "");
+    }
+
+    @Tag("unit")
+    @Test
     public void treeBuilderExample() throws IOException {
         List<Object> stack = new ArrayList<>();
         parser.setVisitor(new JSON5Visitor() {

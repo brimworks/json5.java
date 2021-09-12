@@ -158,7 +158,7 @@ SingleEscapeCharacter =
     ( "'" |
       '"' |
       "\\" )
-        %{ appendStringBufferCodePt(p); } |
+        %{ appendStringBufferCodePt(data.get(p-1)); } |
     'b' %{ appendStringBufferCodePt(0x08); } |
     'f' %{ appendStringBufferCodePt(0x0C); } |
     'n' %{ appendStringBufferCodePt(0x0A); } |
@@ -253,26 +253,26 @@ EscapeSequence =
 
 # JSON5 parts:
 JSON5DoubleStringCharacter =
-    ([^"\\] -- LineTerminatorSequence)+
+    ([^"\\] -- LineTerminatorSequence)**
         >{ mark=p; }
         %{ appendStringBufferUTF8(mark, p); }
     (   "\\" ( LineTerminatorSequence | EscapeSequence )
-        ( [^"\\] -- LineTerminatorSequence ) *
+        ( [^"\\] -- LineTerminatorSequence )**
             >{ mark=p; }
             %{ appendStringBufferUTF8(mark, p); } )*;
 
 JSON5SingleStringCharacter =
-    ([^'\\] -- LineTerminatorSequence)+
+    ([^'\\] -- LineTerminatorSequence)**
         >{ mark=p; }
         %{ appendStringBufferUTF8(mark, p); }
     (   "\\" ( LineTerminatorSequence | EscapeSequence )
-        ([^'\\] -- LineTerminatorSequence)*
+        ([^'\\] -- LineTerminatorSequence)**
             >{ mark=p; }
             %{ appendStringBufferUTF8(mark, p); } )*;
 
 JSON5String =
-    '"' JSON5DoubleStringCharacter* '"' |
-    "'" JSON5SingleStringCharacter* "'";
+    '"' JSON5DoubleStringCharacter '"' |
+    "'" JSON5SingleStringCharacter "'";
 
 JSON5NumericLiteral =
     NumericLiteral |
