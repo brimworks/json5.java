@@ -30,6 +30,7 @@ public class CharVisitorImpl extends AbstractVisitorImpl {
         return new CharVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

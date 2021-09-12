@@ -31,6 +31,7 @@ public class LongVisitorImpl extends AbstractVisitorImpl {
         return new LongVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

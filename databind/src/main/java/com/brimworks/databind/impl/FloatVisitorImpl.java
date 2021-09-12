@@ -30,6 +30,7 @@ public class FloatVisitorImpl extends AbstractVisitorImpl {
         return new FloatVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

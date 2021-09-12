@@ -30,6 +30,7 @@ public class ShortVisitorImpl extends AbstractVisitorImpl {
         return new ShortVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

@@ -30,6 +30,7 @@ public class ByteVisitorImpl extends AbstractVisitorImpl {
         return new ByteVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

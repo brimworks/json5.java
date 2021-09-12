@@ -152,8 +152,10 @@ public class DataBind implements TypeRegistry {
         /**
          * Register a TypeFactory.
          * 
+         * @param <T> is the type that is used with the TypeFactory.
          * @param type        the reflection type
          * @param typeFactory the factory to use when that reflection type is found
+         * @return this
          * @throws NullPointerException if typeFactory is null
          */
         public <T> Builder putTypeFactory(Type type, TypeFactory<T> typeFactory) {
@@ -166,9 +168,11 @@ public class DataBind implements TypeRegistry {
         /**
          * Register a VisitType.
          * 
+         * @param <T> is the type used with visit type.
          * @param type      the reflection type
          * @param visitType the visit function to use when that reflection type is
          *                  found.
+         * @return this
          * @throws NullPointerException if visitType is null
          */
         public <T> Builder putVisitType(Type type, VisitType<T> visitType) {
@@ -198,6 +202,7 @@ public class DataBind implements TypeRegistry {
          * StackOverflowException will occur when trying to find a type adapter.
          * 
          * @param delegate the registry to add to the list of registries to use.
+         * @return this
          */
         public Builder addTypeFactoryRegistry(TypeFactoryRegistry delegate) {
             if (null == delegate)
@@ -214,6 +219,7 @@ public class DataBind implements TypeRegistry {
          * StackOverflowException will occur when trying to find a type adapter.
          * 
          * @param delegate the registry to add to the list of registries to use.
+         * @return this
          */
         public Builder addVisitTypeRegistry(VisitTypeRegistry delegate) {
             if (null == delegate)
@@ -385,11 +391,18 @@ public class DataBind implements TypeRegistry {
 
     /**
      * Transform an input of the specified type to a target type.
+     * @param <Input> is the input type to transform from.
+     * @param <Target> is the output type to transform into.
+     * @param input is the actual input to transform.
+     * @param targetType is the java class to transform into.
+     * @return a target typed value after the transform.
      */
+    @SuppressWarnings("unchecked")
     public <Input, Target> Target transform(Input input, Class<Target> targetType) {
         return (Target) transform(input, (Type) targetType);
     }
 
+    @SuppressWarnings("unchecked")
     public <Input> Object transform(Input input, Type targetType) {
         // FIXME: Why the type cast needed?
         VisitType<Input> visit = getVisitType((Class<Input>) (null == input ? null : input.getClass()));

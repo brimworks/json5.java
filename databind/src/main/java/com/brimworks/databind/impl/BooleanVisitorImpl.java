@@ -30,6 +30,7 @@ public class BooleanVisitorImpl extends AbstractVisitorImpl {
         return new BooleanVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

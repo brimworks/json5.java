@@ -3,6 +3,7 @@ package com.brimworks.databind;
 import java.lang.reflect.Type;
 
 public interface TypeFactoryRegistry {
+    @SuppressWarnings("unchecked")
     default <T> TypeFactory<T> getTypeFactory(Class<T> type) {
         return (TypeFactory<T>)getTypeFactory((Type)type);
     }

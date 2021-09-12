@@ -31,6 +31,7 @@ public class DoubleVisitorImpl extends AbstractVisitorImpl {
         return new DoubleVisitorImpl(context, registry, consumer);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if (val instanceof String) {

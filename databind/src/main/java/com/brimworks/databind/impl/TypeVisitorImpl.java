@@ -2,19 +2,15 @@ package com.brimworks.databind.impl;
 
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
 
 import com.brimworks.databind.ArrayVisitor;
 import com.brimworks.databind.ArrayBuilder;
 import com.brimworks.databind.ObjectVisitor;
 import com.brimworks.databind.ObjectBuilder;
-import com.brimworks.databind.Builder;
 import com.brimworks.databind.Location;
 import com.brimworks.databind.TypeBuilderContext;
 import com.brimworks.databind.TypeFactory;
 import com.brimworks.databind.TypeRegistry;
-import com.brimworks.databind.TypeVisitor;
 import com.brimworks.databind.TypeVisitorFactory;
 import com.brimworks.databind.VisitType;
 
@@ -29,6 +25,7 @@ public class TypeVisitorImpl<T> extends AbstractVisitorImpl {
     public TypeVisitorImpl(TypeRegistry registry, Type buildType, Consumer<T> consumer) {
         this(null, registry, buildType, consumer);
     }
+    @SuppressWarnings("unchecked")
     public TypeVisitorImpl(TypeBuilderContext context, TypeRegistry registry, Type buildType, Consumer<T> consumer) {
         super(context, registry);
         if ( null == registry ) throw new NullPointerException("expected non-null registry");
@@ -59,6 +56,7 @@ public class TypeVisitorImpl<T> extends AbstractVisitorImpl {
         ArrayBuilder<T> builder = factory.createArray(size, context);
         return new ArrayVisitorImpl<T>(context, builder, consumer);
     }
+    @SuppressWarnings("unchecked")
     @Override
     public void visit(Object val) {
         if ( val instanceof String ) {
