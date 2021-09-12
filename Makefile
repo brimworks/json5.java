@@ -1,6 +1,6 @@
 publish:
 	@$(if $(VERSION),,$(error Please provide a version number to publish via VERSION=x.x.x))true
-	VERSION=$(VERSION) ./gradlew bintrayUpload
+	VERSION=$(VERSION) ./gradlew publish
 	git tag $(VERSION)
 	git push --tags origin $(VERSION)
 
